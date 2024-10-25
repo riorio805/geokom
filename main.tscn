@@ -1,0 +1,17 @@
+[gd_scene load_steps=5 format=3 uid="uid://bupv11kto8goj"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_qi70q"]
+[ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="2_5118a"]
+[ext_resource type="PackedScene" uid="uid://bhbgwvsdxb5yp" path="res://objects/cvh/convex_hull.tscn" id="2_mprjy"]
+[ext_resource type="Script" path="res://camera.gd" id="4_qpr45"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_qi70q")
+
+[node name="Draw" parent="." instance=ExtResource("2_mprjy")]
+
+[node name="Dots" parent="." instance=ExtResource("2_5118a")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+anchor_mode = 0
+script = ExtResource("4_qpr45")
