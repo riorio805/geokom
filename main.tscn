@@ -15,5 +15,4 @@ draw_node = NodePath("Draw")
 [node name="Dots" parent="." instance=ExtResource("2_5118a")]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-anchor_mode = 0
 script = ExtResource("4_qpr45")

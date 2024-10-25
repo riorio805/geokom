@@ -12,6 +12,7 @@ var left_pressed: bool
 var left_clicked: bool
 var right_clicked: bool
 var right_pressed: bool
+var zoom_delta:int
 
 func _process(delta) -> void:
 	_handle_mouse_input(delta)
@@ -19,6 +20,12 @@ func _process(delta) -> void:
 		if draw_node.has_method("update_camera"):
 			draw_node.update_camera(camera.get_camera_rect())
 		draw_node.update_with_points(dots_node.dot_nodes)
+	
+	if Input.is_action_pressed("debug"):
+		camera.change_zoom(0, camera.get_total_transform() * get_viewport().get_mouse_position())
+		#print(get_viewport_rect())
+		#print(camera.get_camera_rect())
+		pass
 	
 	if Input.is_action_pressed("debug") and Input.is_action_just_pressed("debug_reset"):
 		camera.position = Vector2()
@@ -37,14 +44,24 @@ func _unhandled_input(event)-> void:
 				right_clicked = true
 			mouse_start = camera.get_total_transform() * event.position
 			mouse_vec = Vector2()
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			zoom_delta += 1
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			zoom_delta -= 1
 	elif event is InputEventMouseMotion:
-		var viewport_transform: Transform2D = get_tree().root.get_final_transform()
+		var viewport_transform: Transform2D = camera.get_total_transform()
 		mouse_input += event.xformed_by(viewport_transform).relative
 
 func _handle_mouse_input(_delta) -> void:
 	# use mouse input, reset to zero
 	mouse_vec += mouse_input
 	mouse_input = Vector2.ZERO
+	
+	# zooming
+	if zoom_delta != 0:
+		mouse_vec += camera.change_zoom(zoom_delta,
+			mouse_start + mouse_vec)
+		zoom_delta = 0
 	
 	if left_pressed:
 		var created = false
