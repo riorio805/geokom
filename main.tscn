@@ -5,8 +5,10 @@
 [ext_resource type="PackedScene" uid="uid://bhbgwvsdxb5yp" path="res://objects/cvh/convex_hull.tscn" id="2_mprjy"]
 [ext_resource type="Script" path="res://camera.gd" id="4_qpr45"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" node_paths=PackedStringArray("dots_node", "draw_node")]
 script = ExtResource("1_qi70q")
+dots_node = NodePath("Dots")
+draw_node = NodePath("Draw")
 
 [node name="Draw" parent="." instance=ExtResource("2_mprjy")]
 

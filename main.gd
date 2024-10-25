@@ -1,7 +1,8 @@
 extends Node2D
 
-@onready var dots_node = $Dots
-@onready var draw_node = $Draw
+@export var dots_node:Node2D
+@export var draw_node:Node2D
+
 @onready var camera = $Camera2D
 
 var mouse_input: Vector2

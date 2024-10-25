@@ -18,7 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Equation="*res://addons/equation_real_solver/equation_real_solver.gd"
-Start="*res://classes/start.gd"
+Start="*res://start.gd"
 
 [display]
 
