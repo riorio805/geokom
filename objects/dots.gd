@@ -4,7 +4,7 @@ const dot_scene = preload("res://objects/dot.tscn")
 
 var dot_nodes:Array[Sprite2D] = []
 var dragged_index:int
-var drag_start:Vector2
+var drag_offset:Vector2
 
 var updated:bool
 
@@ -29,13 +29,16 @@ func start_drag_from(pos:Vector2) -> bool:
 	if dragged_index == -1:
 		return false
 	
-	drag_start = dot_nodes[dragged_index].position
+	drag_offset = dot_nodes[dragged_index].position - pos
 	return true
 
+func is_dragging() -> bool:
+	return dragged_index != -1
+
 ## Move dragged dot to original location + rel, only works if already dragging
-func move_dragged_dot(rel:Vector2) -> void:
+func move_dragged_dot(to:Vector2) -> void:
 	if dragged_index != -1:
-		dot_nodes[dragged_index].position = drag_start + rel
+		dot_nodes[dragged_index].position = to + drag_offset
 		updated = true
 
 ## Releases drag, only works if already dragging

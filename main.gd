@@ -8,23 +8,25 @@ extends Node2D
 var mouse_input: Vector2
 var mouse_start: Vector2
 var mouse_vec: Vector2
+var mouse_pos: Vector2
 var left_pressed: bool
 var left_clicked: bool
 var right_clicked: bool
 var right_pressed: bool
 var zoom_delta:int
 
+
 func _process(delta) -> void:
+	mouse_pos = camera.get_total_transform() * get_viewport().get_mouse_position()
 	_handle_mouse_input(delta)
+	
 	if dots_node.consume_update():
 		if draw_node.has_method("update_camera"):
 			draw_node.update_camera(camera.get_camera_rect())
 		draw_node.update_with_points(dots_node.dot_nodes)
 	
 	if Input.is_action_pressed("debug"):
-		camera.change_zoom(0, camera.get_total_transform() * get_viewport().get_mouse_position())
-		#print(get_viewport_rect())
-		#print(camera.get_camera_rect())
+		print("mouse at  ", mouse_pos)
 		pass
 	
 	if Input.is_action_pressed("debug") and Input.is_action_just_pressed("debug_reset"):
@@ -59,8 +61,7 @@ func _handle_mouse_input(_delta) -> void:
 	
 	# zooming
 	if zoom_delta != 0:
-		mouse_vec += camera.change_zoom(zoom_delta,
-			mouse_start + mouse_vec)
+		camera.change_zoom(zoom_delta)
 		zoom_delta = 0
 	
 	if left_pressed:
@@ -69,21 +70,20 @@ func _handle_mouse_input(_delta) -> void:
 			created = dots_node.create_at(mouse_start)
 			if created: print("Successfully created dot at ", mouse_start)
 			else: 		print("Failed to create dot at ", mouse_start)	
-		# handle dragging stuff if new dot not create
+		# handle dragging stuff if new dot not created
 		if not created:
 			if left_clicked:
 				dots_node.start_drag_from(mouse_start)
 			else:
-				dots_node.move_dragged_dot(mouse_vec)
+				dots_node.move_dragged_dot(mouse_pos)
 		left_clicked = false
-		#print("Dragged from ", mouse_start, " to ", mouse_start + mouse_vec, " for ", left_pressed_time)
 	else:
 		# handle release
 		dots_node.release_drag()
 	
 	if right_pressed:
 		var deleted = false
-		if right_clicked:
+		if right_clicked and not dots_node.is_dragging():
 			deleted = dots_node.delete_at(mouse_start)
 			if deleted:
 				print("Successfully deleted dot at ", mouse_start)
