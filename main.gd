@@ -4,6 +4,7 @@ extends Node2D
 @export var draw_node:Node2D
 
 @onready var camera = $Camera2D
+@onready var import_button = $CanvasLayer/ImportPoints
 
 var mouse_input: Vector2
 var mouse_start: Vector2
@@ -85,11 +86,10 @@ func _handle_mouse_input(_delta) -> void:
 		var deleted = false
 		if right_clicked and not dots_node.is_dragging():
 			deleted = dots_node.delete_at(mouse_start)
-			if deleted:
-				print("Successfully deleted dot at ", mouse_start)
-			else:
-				print("Failed to delete dot at ", mouse_start)
-		
+			#if deleted:
+				#print("Successfully deleted dot at ", mouse_start)
+			#else:
+				#print("Failed to delete dot at ", mouse_start)
 		if not deleted:
 			if right_clicked:
 				camera.start_drag()
@@ -98,3 +98,28 @@ func _handle_mouse_input(_delta) -> void:
 		right_clicked = false
 	else:
 		camera.release_drag()
+
+
+func _on_import_points_pressed():
+	var file_dialog = FileDialog.new()
+	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	file_dialog.use_native_dialog = true
+	file_dialog.file_selected.connect(import_points)
+	
+	add_child(file_dialog)
+	file_dialog.popup_centered()
+	file_dialog.grab_focus()
+	remove_child(file_dialog)
+
+func import_points(path:String) -> void:
+	var file = FileAccess.open(path, FileAccess.READ)
+	var points = PackedVector2Array()
+	while not file.eof_reached():
+		var line = file.get_csv_line()
+		if len(line) != 2: return
+		if not (line[0].is_valid_float() and line[1].is_valid_float()): return
+		points.append(Vector2(float(line[0]), float(line[1])))
+	
+	dots_node.remove_all_dots()
+	dots_node.create_dots(points)

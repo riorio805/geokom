@@ -10,8 +10,12 @@ var updated:bool
 
 func _process(_delta) -> void:
 	# debug
-	if Input.is_action_pressed("debug") and Input.is_action_just_pressed("debug_print"):
-		print(dot_nodes)
+	if Input.is_action_pressed("debug"):
+		if Input.is_action_just_pressed("debug_print"):
+			print(dot_nodes)
+		if Input.is_action_just_pressed("debug_delete_all_dots"):
+			remove_all_dots()
+			updated = true
 
 ## Consumes an update check if dots has been updated since last time (true if update, false if no update)
 func consume_update() -> bool:
@@ -77,3 +81,15 @@ func get_dot_at(pos:Vector2) -> int:
 		if bounds.has_point(pos):
 			return i
 	return -1
+
+## Removes all dots
+func remove_all_dots() -> void:
+	for n in dot_nodes:
+		n.queue_free()
+	dot_nodes = []
+	pass
+
+## Creates dots at specified positions in array
+func create_dots(ats:PackedVector2Array):
+	for pos in ats:
+		create_at(pos)

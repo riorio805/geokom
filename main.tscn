@@ -16,3 +16,14 @@ draw_node = NodePath("Draw")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("4_qpr45")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ImportPoints" type="Button" parent="CanvasLayer"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 124.0
+offset_bottom = 41.0
+text = "Import points"
+
+[connection signal="pressed" from="CanvasLayer/ImportPoints" to="." method="_on_import_points_pressed"]
