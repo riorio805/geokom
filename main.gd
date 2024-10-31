@@ -12,6 +12,8 @@ var left_clicked: bool
 var right_clicked: bool
 var right_pressed: bool
 
+	
+
 func _process(delta) -> void:
 	_handle_mouse_input(delta)
 	if dots_node.consume_update():

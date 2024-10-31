@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://2hdyns8skmwf"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_mbnjv"]
+[ext_resource type="Script" path="res://fredo's playground/voronoi_fredo.gd" id="2_63652"]
+[ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="3_4ncfd"]
+[ext_resource type="Script" path="res://camera.gd" id="4_x8ieo"]
+
+[node name="Fredo" type="Node2D"]
+script = ExtResource("1_mbnjv")
+
+[node name="Draw" type="Node2D" parent="."]
+script = ExtResource("2_63652")
+
+[node name="Dots" parent="." instance=ExtResource("3_4ncfd")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+anchor_mode = 0
+script = ExtResource("4_x8ieo")
