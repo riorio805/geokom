@@ -1,7 +1,7 @@
 # AVLTree.gd
 class_name AVLTree
 
-const EPS = 3.0
+const EPS = 0.2
 var root: AVLNode = null
 
 signal add_circle_event(y, x)

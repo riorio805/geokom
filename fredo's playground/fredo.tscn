@@ -1,18 +1,29 @@
-[gd_scene load_steps=5 format=3 uid="uid://2hdyns8skmwf"]
+[gd_scene load_steps=5 format=3 uid="uid://b8p2jli64pxs0"]
 
-[ext_resource type="Script" path="res://main.gd" id="1_mbnjv"]
-[ext_resource type="Script" path="res://fredo's playground/voronoi_fredo.gd" id="2_63652"]
-[ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="3_4ncfd"]
-[ext_resource type="Script" path="res://camera.gd" id="4_x8ieo"]
+[ext_resource type="Script" path="res://main.gd" id="1_0b3sm"]
+[ext_resource type="PackedScene" uid="uid://bppbm3gee4xef" path="res://fredo's playground/voronoi_fredo.tscn" id="2_ssvg6"]
+[ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="3_nbr13"]
+[ext_resource type="Script" path="res://camera.gd" id="4_xrnfc"]
 
-[node name="Fredo" type="Node2D"]
-script = ExtResource("1_mbnjv")
+[node name="Fredo" type="Node2D" node_paths=PackedStringArray("dots_node", "draw_node")]
+script = ExtResource("1_0b3sm")
+dots_node = NodePath("Dots")
+draw_node = NodePath("VoronoiFredo")
 
-[node name="Draw" type="Node2D" parent="."]
-script = ExtResource("2_63652")
+[node name="VoronoiFredo" parent="." instance=ExtResource("2_ssvg6")]
 
-[node name="Dots" parent="." instance=ExtResource("3_4ncfd")]
+[node name="Dots" parent="." instance=ExtResource("3_nbr13")]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-anchor_mode = 0
-script = ExtResource("4_x8ieo")
+script = ExtResource("4_xrnfc")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ImportPoints" type="Button" parent="CanvasLayer"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 124.0
+offset_bottom = 41.0
+text = "Import points"
+
+[connection signal="pressed" from="CanvasLayer/ImportPoints" to="." method="_on_import_points_pressed"]
