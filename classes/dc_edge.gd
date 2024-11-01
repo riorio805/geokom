@@ -1,23 +1,20 @@
 class_name DCEdge
-extends RefCounted
+extends Resource
 
 var start: Vector2 ## Starting vertex of edge
 var end: Vector2 ## Other vertex of edge
 var face: Face ## Face connected to edge
 
-# Implementation concern: use weakref() to assign to these variables so that the GC can safely destroy these
-# Use strong references when containing all DCEdges (e.g. an array), then use weakref to refer to other edges
 var twin: DCEdge ## The other edge that is similar to this edge
 var next: DCEdge ## Next edge i.e. CW to this edge (neg angle)
 var prev: DCEdge ## Prev edge i.e. is CCW to this edge (pos angle)
 
-
-func initialize(start_point:Vector2, end_point:Vector2, face:Face):
-	self.start = start_point
-	self.end = end_point
-	self.face = face
-	return self
-
+static func init(start_point:Vector2, end_point:Vector2, face:Face) -> DCEdge:
+	var out = DCEdge.new()
+	out.start = start_point
+	out.end = end_point
+	out.face = face
+	return out
 
 
 func _to_string():

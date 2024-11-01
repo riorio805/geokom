@@ -1,6 +1,6 @@
 ## Represents a Face of the diagram
 class_name Face
-extends RefCounted
+extends Resource
 
 var vertex:Vertex
 

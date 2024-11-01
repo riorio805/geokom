@@ -29,12 +29,12 @@ func update_with_points(nodes:Array):
 	# map to node points
 	points = points.map(func (p): return Vertex.new().initialize(p))
 	
-	var cur_points = []
+	var cur_faces = []
 	var p = points.pop_front()
-	cur_points.append(p)
+	cur_faces.append(create_bounding_box_face(p))
 	
-	for i in range(len(points)):
-		pass
+	while len(points) > 0:
+		p = points.pop_front()
 	
 
 
@@ -49,20 +49,27 @@ func update_with_points(nodes:Array):
 
 
 
-func create_bounding_box_face() -> Face:
+func create_bounding_box_face(v:Vertex) -> Face:
 	var f = Face.new()
+	# vertex
+	var pbl = bounding_box.position
+	var pbr = Vector2(bounding_box.end.x, bounding_box.position.y)
+	var ptr = bounding_box.end
+	var ptl = Vector2(bounding_box.position.x, bounding_box.end.y)
+	# edges
+	var e1 = DCEdge.init(ptl, ptr, f)
+	var e2 = DCEdge.init(ptr, pbr, f)
+	var e3 = DCEdge.init(pbr, pbl, f)
+	var e4 = DCEdge.init(ptl, ptr, f)
+	# connection
+	e1.set_edge_connection(e2, e4)
+	e2.set_edge_connection(e3, e1)
+	e3.set_edge_connection(e4, e2)
+	e4.set_edge_connection(e1, e3)
+	# face edge list
+	f._update_edge_list()
 	
-	var ptl = bounding_box.position
-	var ptr = Vector2(bounding_box.end.x, bounding_box.position.y)
-	var pbr = bounding_box.end
-	var pbl = Vector2(bounding_box.position.x, bounding_box.end.y)
-	
-	var e1 = DCEdge.new().initialize(ptl, ptr, f)
-	var e2 = DCEdge.new().initialize(ptr, pbr, f)
-	var e3 = DCEdge.new().initialize(pbr, pbl, f)
-	var e4 = DCEdge.new().initialize(ptl, ptr, f)
-	
-	return null
+	return f
 
 
 func update_camera(bounds:Rect2):
