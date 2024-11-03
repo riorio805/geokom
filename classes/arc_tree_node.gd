@@ -14,6 +14,9 @@ var vertex:Vertex
 # Extra arc references to help arc bounds calculations (breakpoints)
 var prev:ArcTreeNode
 var next:ArcTreeNode
+# Half-edges associated with this arc
+var left_hedge: DCEdge
+var right_hedge: DCEdge
 # Height for self-balancing
 var height:int
 

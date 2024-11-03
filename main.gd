@@ -4,7 +4,8 @@ extends Node2D
 @export var draw_node:Node2D
 
 @onready var camera = $Camera2D
-@onready var import_button = $CanvasLayer/ImportPoints
+@onready var import_button = $GUI/ImportPoints
+@onready var file_dialog = $GUI/ImportPoints/FileDialog
 
 var mouse_input: Vector2
 var mouse_start: Vector2
@@ -17,6 +18,9 @@ var right_pressed: bool
 var zoom_delta:int
 
 
+func _ready():
+	file_dialog.file_selected.connect(import_points)
+
 func _process(delta) -> void:
 	mouse_pos = camera.get_total_transform() * get_viewport().get_mouse_position()
 	_handle_mouse_input(delta)
@@ -26,7 +30,7 @@ func _process(delta) -> void:
 			draw_node.update_camera(camera.get_camera_rect())
 		draw_node.update_with_points(dots_node.dot_nodes)
 	
-	if Input.is_action_pressed("debug"):
+	if Input.is_action_just_pressed("debug"):
 		print("mouse at  ", mouse_pos)
 		pass
 	
@@ -101,16 +105,7 @@ func _handle_mouse_input(_delta) -> void:
 
 
 func _on_import_points_pressed():
-	var file_dialog = FileDialog.new()
-	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.use_native_dialog = true
-	file_dialog.file_selected.connect(import_points)
-	
-	add_child(file_dialog)
 	file_dialog.popup_centered()
-	file_dialog.grab_focus()
-	remove_child(file_dialog)
 
 func import_points(path:String) -> void:
 	var file = FileAccess.open(path, FileAccess.READ)
@@ -118,7 +113,9 @@ func import_points(path:String) -> void:
 	while not file.eof_reached():
 		var line = file.get_csv_line()
 		if len(line) != 2: return
-		if not (line[0].is_valid_float() and line[1].is_valid_float()): return
+		var xs = line[0].strip_edges()
+		var ys = line[0].strip_edges()
+		if not (xs.is_valid_float() and ys.is_valid_float()): return
 		points.append(Vector2(float(line[0]), float(line[1])))
 	
 	dots_node.remove_all_dots()

@@ -10,12 +10,18 @@ var next: DCEdge ## Next edge i.e. CW to this edge (neg angle)
 var prev: DCEdge ## Prev edge i.e. is CCW to this edge (pos angle)
 
 
-func initialize(start_point:Vertex, end_point:Vertex, face:Face):
+func initialize(start_point:Vertex, end_point:Vertex, edge_face:Face):
 	self.start = start_point
 	self.end = end_point
-	self.face = face
+	self.face = edge_face
 	return self
 
+static func init(start_point:Vector2, end_point:Vector2, edge_face:Face) -> DCEdge:
+	var out = DCEdge.new()
+	out.start = start_point
+	out.end = end_point
+	out.face = edge_face
+	return out
 
 
 func _to_string():
