@@ -1,6 +1,6 @@
 ## Represents an arc.
 ## Implementation inspired by https://pvigier.github.io/2018/11/18/fortune-algorithm-details.html
-extends RefCounted
+extends Resource
 class_name ArcTreeNode
 
 const MACHINE_EPS = 10e-8
@@ -14,6 +14,9 @@ var vertex:Vertex
 # Extra arc references to help arc bounds calculations (breakpoints)
 var prev:ArcTreeNode
 var next:ArcTreeNode
+# Half-edges associated with this arc
+var left_hedge: DCEdge
+var right_hedge: DCEdge
 # Height for self-balancing
 var height:int
 

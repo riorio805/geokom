@@ -2,28 +2,37 @@
 
 [ext_resource type="Script" path="res://main.gd" id="1_qi70q"]
 [ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="2_5118a"]
-[ext_resource type="PackedScene" uid="uid://bhbgwvsdxb5yp" path="res://objects/cvh/convex_hull.tscn" id="2_mprjy"]
+[ext_resource type="PackedScene" uid="uid://dpuik6gfo4ogr" path="res://objects/delaunay_rndinc/delaunay_rndinc.tscn" id="2_ffmj8"]
 [ext_resource type="Script" path="res://camera.gd" id="4_qpr45"]
 
 [node name="Main" type="Node2D" node_paths=PackedStringArray("dots_node", "draw_node")]
 script = ExtResource("1_qi70q")
 dots_node = NodePath("Dots")
-draw_node = NodePath("Draw")
+draw_node = NodePath("DelaunayRandInc")
 
-[node name="Draw" parent="." instance=ExtResource("2_mprjy")]
+[node name="DelaunayRandInc" parent="." instance=ExtResource("2_ffmj8")]
 
 [node name="Dots" parent="." instance=ExtResource("2_5118a")]
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("4_qpr45")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="GUI" type="CanvasLayer" parent="."]
 
-[node name="ImportPoints" type="Button" parent="CanvasLayer"]
+[node name="ImportPoints" type="Button" parent="GUI"]
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 124.0
 offset_bottom = 41.0
 text = "Import points"
 
-[connection signal="pressed" from="CanvasLayer/ImportPoints" to="." method="_on_import_points_pressed"]
+[node name="FileDialog" type="FileDialog" parent="GUI/ImportPoints"]
+title = "Open a File"
+size = Vector2i(303, 180)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.txt;Text Files", "*.*;Any")
+use_native_dialog = true
+
+[connection signal="pressed" from="GUI/ImportPoints" to="." method="_on_import_points_pressed"]
