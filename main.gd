@@ -112,11 +112,13 @@ func import_points(path:String) -> void:
 	var points = PackedVector2Array()
 	while not file.eof_reached():
 		var line = file.get_csv_line()
+		if len(line) == 1 and line[0] == "": break
 		if len(line) != 2: return
 		var xs = line[0].strip_edges()
 		var ys = line[0].strip_edges()
 		if not (xs.is_valid_float() and ys.is_valid_float()): return
 		points.append(Vector2(float(line[0]), float(line[1])))
+	
 	
 	dots_node.remove_all_dots()
 	dots_node.create_dots(points)

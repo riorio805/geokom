@@ -20,7 +20,7 @@ func _process(_delta) -> void:
 
 
 func update_with_points(nodes:Array):
-	print("========= UPDATE =========")
+	#print("========= UPDATE =========")
 	if len(nodes) == 0:
 		draw_edges = []
 		queue_redraw()
@@ -32,18 +32,22 @@ func update_with_points(nodes:Array):
 	
 	var min_vtx = Vertex.get_min_vertex(vertices)
 	var max_vtx = Vertex.get_max_vertex(vertices)
-	var yrange = (max_vtx.point.y - min_vtx.point.y) * range_mod
+	var yrange = (max_vtx.point.y - min_vtx.point.y) * range_mod + 50
 	var pn1 = InfXVertex.create_infxvertex(
 		min_vtx.point.y - yrange, InfXVertex.Direction.X_PLUS)
-	pn1.point = Vector2(3e4, pn1.y)
+	pn1.point = Vector2(3e2, pn1.y)
 	var pn2 = InfXVertex.create_infxvertex(
 		max_vtx.point.y + yrange, InfXVertex.Direction.X_MIN)
-	pn2.point = Vector2(-3e3, pn2.y)
+	pn2.point = Vector2(-3e4, pn2.y)
 	
 	var root_tri = DTriangle.init_create_edges(max_vtx, pn1, pn2)
+	#print("P-1: ", pn1)
+	#print("P-2: ", pn2)
+	#print("FIRST POINT: ", max_vtx)
 	
 	for vtx in vertices:
 		if vtx != max_vtx:
+			#print("NEW POINT: ", vtx)
 			root_tri.split_at(vtx)
 	
 	draw_edges = root_tri.get_all_leaf_edges()

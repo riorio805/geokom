@@ -7,7 +7,7 @@ enum Direction {
 }
 
 var y: float
-var direction:Direction
+var direction:Direction = Direction.X_PLUS
 
 func _to_string() -> String:
 	return "(y={0}, dir={1})".format([y, direction])
@@ -25,11 +25,11 @@ func less_than(other) -> bool:
 	if other is Vertex:
 		if self.y < other.point.y: return true
 		elif self.y > other.point.y: return false
-		else: self.direction == InfXVertex.Direction.X_MIN
+		return self.direction == InfXVertex.Direction.X_MIN
 	elif other is Vector2:
 		if self.point.y < other.y: return true
 		elif self.point.y > other.y: return false
-		else: self.direction == InfXVertex.Direction.X_MIN
+		return self.direction == InfXVertex.Direction.X_MIN
 	elif other is InfXVertex:
 		if self.y < other.y: return true
 		elif self.y > other.y: return false

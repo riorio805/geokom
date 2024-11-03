@@ -28,7 +28,7 @@ func _to_string():
 func get_other_triangle(other:DTriangle) -> DTriangle:
 	if other == t1: 		return t2
 	elif other == t2: 	return t1
-	print("DEdge/get_other_triangle: Something has gone very wrong;\n\t t1:{0}, t2:{1}, other:{2}".format([t1, t2, other]))
+	print("DEdge/get_other_triangle: Something has gone very wrong; e:{3}\n\t t1:{0}, t2:{1}, other:{2}".format([t1, t2, other, self]))
 	return null
 
 func replace_triangle(from:DTriangle, to:DTriangle) -> void:

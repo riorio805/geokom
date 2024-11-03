@@ -4,17 +4,17 @@ class_name Vertex
 var point:Vector2
 var connected_edges:Array[Edge]
 
-static func create_vertex(point:Vector2) -> Vertex:
+static func create_vertex(at_point:Vector2) -> Vertex:
 	var out = Vertex.new()
-	out.point = point
+	out.point = at_point
 	return out
 
 ## Deprecated
-static func init(point:Vector2) -> Vertex:
-	return create_vertex(point)
+static func init(at_point:Vector2) -> Vertex:
+	return create_vertex(at_point)
 
-func initialize(point:Vector2) -> Vertex:
-	self.point = point
+func initialize(at_point:Vector2) -> Vertex:
+	self.point = at_point
 	return self
 
 func _to_string():
@@ -41,16 +41,12 @@ func less_than(other) -> bool:
 
 static func get_max_vertex(arr:Array[Vertex]) -> Vertex:
 	return arr.reduce(
-		func(max, vec):
-			return max if vec.less_than(max) else vec
+		func(max_vec, vec):
+			return vec if max_vec.less_than(vec) else max_vec
 	)
 
 static func get_min_vertex(arr:Array[Vertex]) -> Vertex:
 	return arr.reduce(
-		func(min, vec):
-			return vec if vec.less_than(min) else min
+		func(min_vec, vec):
+			return vec if vec.less_than(min_vec) else min_vec
 	)
-
-## Gets all other vertices connected to this vertex, except for `from_edge`
-func get_other(from_edge:Edge) -> Array[Vertex]:
-	return []
