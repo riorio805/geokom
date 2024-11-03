@@ -1,6 +1,6 @@
 ## Represents an arc.
 ## Implementation inspired by https://pvigier.github.io/2018/11/18/fortune-algorithm-details.html
-extends RefCounted
+extends Resource
 class_name ArcTreeNode
 
 const MACHINE_EPS = 10e-8
