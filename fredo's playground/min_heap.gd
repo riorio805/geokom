@@ -37,7 +37,7 @@ func peek() -> HeapNode:
 func _heapify_up(index: int) -> void:
 	while index > 0:
 		var parent_index = (index - 1) / 2
-		if heap[index].priority < heap[parent_index].priority:
+		if _compare_priority(heap[index], heap[parent_index]):
 			_swap(index, parent_index)
 			index = parent_index
 		else:
@@ -50,9 +50,9 @@ func _heapify_down(index: int) -> void:
 		var right_child = 2 * index + 2
 		var smallest = index
 
-		if left_child < heap.size() and heap[left_child].priority < heap[smallest].priority:
+		if left_child < heap.size() and _compare_priority(heap[left_child], heap[smallest]):
 			smallest = left_child
-		if right_child < heap.size() and heap[right_child].priority < heap[smallest].priority:
+		if right_child < heap.size() and _compare_priority(heap[right_child], heap[smallest]):
 			smallest = right_child
 
 		if smallest != index:
@@ -64,3 +64,14 @@ func _heapify_down(index: int) -> void:
 # Utility to check if the heap is empty
 func is_empty() -> bool:
 	return heap.size() == 0
+
+func _compare_priority(a, b): # true if a pop first
+	if a.priority < b.priority:
+		return true
+	if a.priority > b.priority:
+		return false
+	if !a.is_site_event:
+		return true # mau pop circle event dulu
+	return false
+	
+	

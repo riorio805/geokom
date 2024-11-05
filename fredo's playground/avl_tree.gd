@@ -1,7 +1,8 @@
 # AVLTree.gd
-class_name AVLTree
+class_name AVLTreeFredo
 
-const EPS = 3.0
+const EPS = 6.0
+
 var root: AVLNode = null
 
 signal add_circle_event(y, x)
@@ -17,6 +18,10 @@ func _update_height(node: AVLNode) -> void:
 
 func _balance_factor(node: AVLNode) -> int:
 	return _get_height(node.left) - _get_height(node.right)
+
+func _init():
+	var a = _get_breakpoint(Vector2(542, 103), Vector2(483, 193), 250)
+	print(a)
 
 # Rotation functions
 func _rotate_right(y: AVLNode) -> AVLNode:
@@ -88,8 +93,6 @@ func _balance(node: AVLNode) -> AVLNode:
 
 
 func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2: float):
-	#p1.y = -p1.y
-	#p2.y = -p2.y
 	var d1 = Vector2(cos(theta1), -sin(theta1))
 	var d2 = Vector2(cos(theta2), -sin(theta2))
 	
@@ -112,8 +115,6 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 	var valid2 = (intersection_x > p2.x) == (d2.x>0)
 
 	if valid1 and valid2:
-		#p1.y = -p1.y
-		#p2.y = -p2.y
 		
 		var ans = Vector2(intersection_x, intersection_x*m1+c1)
 		print(str(p1) + str(theta1).substr(0, 4) + " berpotongan dengan " + str(p2) + str(theta2).substr(0, 4) + " di " + str(ans))
@@ -140,6 +141,9 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.arc_focus), voronoi_vertex.x)
 			#add_circle.emit(voronoi_vertex, 10)
 			#node.next.ends_in_directrix = voronoi_vertex.y
+			add_circle.emit(voronoi_vertex, 10)
+			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+			
 	
 	if node.next.next != null:
 		# cek intersection right
@@ -147,6 +151,8 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 		if voronoi_vertex != null:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), voronoi_vertex.x)
 			#add_circle.emit(voronoi_vertex, 8)
+			add_circle.emit(voronoi_vertex, 10)
+			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
 	
 func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> void:
@@ -189,11 +195,14 @@ func _insert_di_paling(node: AVLNode, data: Vector2, directrix_y, is_paling_kiri
 # Recursive insert function that also balances the tree and updates predecessors and successors
 func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 	if node == null:
+		print("new node")
 		var new_node = AVLNode.new(data)
 		return new_node
 
-	var right_x = node.get_right_breakpoint(directrix_y).x
-	var left_x = node.get_left_breakpoint(directrix_y).x
+	var right_x = get_right_breakpoint(node, directrix_y).x
+	var left_x = get_left_breakpoint(node, directrix_y).x
+	
+	print(left_x, " <> ", right_x)
 	
 	if data.x < left_x:
 		# check site event at left
@@ -210,6 +219,11 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 		
 		
 		print("arc yang displit adalah " + str(arc_yg_di_split))
+		
+		# edge case: posisi y nya sama dengan arc_focus yang lain
+		#if arc_yg_di_split.y == arc_yg_di_tengah.y:
+			#if arc_yg_di_tengah.x > arc_yg_di_split.x:
+		# ini nanti saja TODO
 		
 		# insert at left
 		node.left = _insert_di_paling(node.left, arc_yg_di_split, directrix_y, false)
@@ -252,7 +266,6 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 		#add_edge.emit(start, start + 300 * arah)
 		#add_circle.emit(start, 5)
 		#add_edge.emit(start, start - 300 * arah)
-		
 		node.right_edge_start = start #node.get_right_breakpoint(directrix_y)
 		node.right_edge_direction = teta + PI/2
 		
@@ -266,6 +279,18 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 # Public insert function
 func site_event(data: Vector2, directrix_y) -> void:
 	root = _site_event(root, data, directrix_y)
+
+func debug2(directrix_y):
+	if root == null: return
+	
+	var tmp = root
+	while (tmp.left != null):
+		tmp = tmp.left
+	var debug2 = ""
+	while (tmp != null):
+		debug2 += '[' + str(tmp.arc_focus) + '] ' + str(get_right_breakpoint(tmp, directrix_y)) + " "
+		tmp = tmp.next
+	print("prev/next: " + debug2)
 
 func debug() -> void:
 	if root == null: return
@@ -323,15 +348,21 @@ func _is_ded(node: AVLNode, directrix_y):
 # Recursive remove function that also balances the tree
 func _remove(node: AVLNode, data_x, directrix_y) -> AVLNode:
 	if node == null:
+		print("ini harusnya tidak pernah dipanggil")
 		return null
 
-	var right_x = node.get_right_breakpoint(directrix_y).x
-	var left_x = node.get_left_breakpoint(directrix_y).x
+	var right_x = get_right_breakpoint(node, directrix_y).x
+	var left_x = get_left_breakpoint(node, directrix_y).x
 	print(str(node.arc_focus) + "left: " + str(left_x) + ", right: " + str(right_x))
+	#assert(left_x < right_x + 10)
 	
+	#if right_x==left_x:
+		#for i in range(5):
+			#add_circle.emit(Vector2(data_x, (directrix_y+node.arc_focus.y)/2), i*4)
 	
 	# Find the node to be removed
-	if not (abs(right_x-left_x) <= EPS and data_x <= right_x + EPS and data_x >= left_x - EPS):
+	if not (abs(right_x-left_x) <= 2*EPS and data_x <= right_x + EPS and data_x >= left_x - EPS):
+	#if not (abs(right_x-left_x) <= 1.5):
 	#if !_is_ded(node, directrix_y):
 		if data_x < left_x + EPS:
 			# delete left
@@ -341,7 +372,10 @@ func _remove(node: AVLNode, data_x, directrix_y) -> AVLNode:
 			node.right = _remove(node.right, data_x, directrix_y)
 		else:
 			# not valid
-			print("Circle Event not valid anymore")
+			print("Circle Event not valid anymore because:")
+			print("- right_x = ", right_x)
+			print("- left_x = ", left_x)
+			print("- data_x = ", data_x)
 	else:
 		# delete current
 		print("deleting arc")
@@ -433,3 +467,94 @@ func _get_max_value_node(node: AVLNode) -> AVLNode:
 func remove(data, directrix_y) -> void:
 	print("mau remove " + str(data))
 	root = _remove(root, data, directrix_y)
+
+
+func get_right_breakpoint(node:AVLNode, directrix_y):
+	if node.next != null:
+		return _get_breakpoint(node.arc_focus, node.next.arc_focus, directrix_y)
+	return Vector2(INF, INF)
+
+func get_left_breakpoint(node:AVLNode, directrix_y):
+	if node.prev != null:
+		#var i = _get_breakpoint(node.arc_focus, node.prev.arc_focus, directrix_y, true)
+		#var j = _get_breakpoint(node.prev.arc_focus, node.arc_focus, directrix_y, true)
+		#
+		#var err_msg = str(_get_breakpoint(node.arc_focus, node.prev.arc_focus, directrix_y, true))\
+				#+ str(_get_breakpoint(node.arc_focus, node.prev.arc_focus, directrix_y, false))\
+				#+ str(_get_breakpoint(node.prev.arc_focus, node.arc_focus, directrix_y, true))\
+				#+ str(_get_breakpoint(node.prev.arc_focus, node.arc_focus, directrix_y, false))
+		#assert((i-j).length_squared() < 5, err_msg)
+		return _get_breakpoint(node.prev.arc_focus, node.arc_focus, directrix_y)
+	return Vector2(-INF, INF)
+
+func _get_breakpoint(p1:Vector2, p2:Vector2, directrix_y):
+	#if abs(p1.y - p2.y) < EPS:
+		#return Vector2((p1.x+p2.x)/2, VoronoiFredo.MIN_Y)
+
+	p1.y = -p1.y
+	p2.y = -p2.y
+	directrix_y = -directrix_y
+	
+	# asumsi parabola terletak pada y yang lebih besar daripada directrix_y
+	var pembagi1 = 2.0*(p1.y-directrix_y)
+	var pembagi2 = 2.0*(p2.y-directrix_y)
+	
+	var ans_x
+	if pembagi1 == 0:
+		ans_x = p1.x
+		
+	elif pembagi2 == 0:
+		ans_x = p2.x
+	
+	else:
+		#var a = 1.0 / pembagi1 - 1.0 / pembagi2
+		var a = (pembagi2 - pembagi1)/(pembagi2*pembagi1)
+		
+		#var b = -2*p1.x/pembagi1 + 2*p2.x/pembagi2
+		var b = (-2*p1.x*pembagi2 + 2*p2.x*pembagi1)/(pembagi1*pembagi2)
+		
+		#var c = (p1.x*p1.x + p1.y*p1.y - directrix_y*directrix_y)/pembagi1 - (p2.x*p2.x + p2.y*p2.y - directrix_y*directrix_y)/pembagi2
+		var c = ((p1.x*p1.x + p1.y*p1.y - directrix_y*directrix_y)*pembagi2 - (p2.x*p2.x + p2.y*p2.y - directrix_y*directrix_y)*pembagi1)/(pembagi1*pembagi2)
+		
+		# Use quadratic formula
+		var discriminant = b * b - 4.0 * a * c
+		discriminant = max(0.0, discriminant)  # Avoid negative values due to floating point errors
+
+		# Return leftmost intersection point for Fortune's algorithm
+		var x1 = (-b - sqrt(discriminant)) / (2.0 * a)
+		var x2 = (-b + sqrt(discriminant)) / (2.0 * a)
+		print("pembagi1 ", pembagi1)
+		print("pembagi2 ", pembagi2)
+		
+		p1.y = -p1.y
+		p2.y = -p2.y
+		directrix_y = -directrix_y
+		
+
+		#var ans_x = min(x1, x2) if take_min else max(x1, x2)
+		#var ans_x = (p1.x-p2.x)*(p1.y-directrix_y)/(p2.y-p1.y) + p1.x
+		if p1.y > p2.y: # p1 dibawah p2
+			ans_x = max(x1, x2)
+			pass
+		else:
+			ans_x = min(x1, x2)
+			pass
+		#var dydx = (ans_x - p1.x)/(p1.x-directrix_y)
+		
+		#ans_x += dydx
+		
+	var ans_y
+	if p1.y != directrix_y:
+		ans_y = (pow(ans_x,2) - 2*p1.x*ans_x + p1.x*p1.x + p1.y*p1.y - directrix_y*directrix_y)/pembagi1
+	else:
+		ans_y = (pow(ans_x,2) - 2*p2.x*ans_x + p2.x*p2.x + p2.y*p2.y - directrix_y*directrix_y)/pembagi2
+	
+	if ans_y < VoronoiFredo.MIN_Y:
+		# TODO
+		pass
+
+	return Vector2(ans_x, ans_y)
+	
+func turunin(start: Vector2, teta):
+	# turunin supaya tidak terlalu di atas boundary
+	pass
