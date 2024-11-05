@@ -4,14 +4,18 @@ const dot_scene = preload("res://objects/dot.tscn")
 
 var dot_nodes:Array[Sprite2D] = []
 var dragged_index:int
-var drag_start:Vector2
+var drag_offset:Vector2
 
 var updated:bool
 
 func _process(_delta) -> void:
 	# debug
-	if Input.is_action_pressed("debug") and Input.is_action_just_pressed("debug_print"):
-		print(dot_nodes)
+	if Input.is_action_pressed("debug"):
+		if Input.is_action_just_pressed("debug_print"):
+			print(dot_nodes)
+		if Input.is_action_just_pressed("debug_delete_all_dots"):
+			remove_all_dots()
+			updated = true
 
 ## Consumes an update check if dots has been updated since last time (true if update, false if no update)
 func consume_update() -> bool:
@@ -29,13 +33,16 @@ func start_drag_from(pos:Vector2) -> bool:
 	if dragged_index == -1:
 		return false
 	
-	drag_start = dot_nodes[dragged_index].position
+	drag_offset = dot_nodes[dragged_index].position - pos
 	return true
 
+func is_dragging() -> bool:
+	return dragged_index != -1
+
 ## Move dragged dot to original location + rel, only works if already dragging
-func move_dragged_dot(rel:Vector2) -> void:
+func move_dragged_dot(to:Vector2) -> void:
 	if dragged_index != -1:
-		dot_nodes[dragged_index].position = drag_start + rel
+		dot_nodes[dragged_index].position = to + drag_offset
 		updated = true
 
 ## Releases drag, only works if already dragging
@@ -74,3 +81,15 @@ func get_dot_at(pos:Vector2) -> int:
 		if bounds.has_point(pos):
 			return i
 	return -1
+
+## Removes all dots
+func remove_all_dots() -> void:
+	for n in dot_nodes:
+		n.queue_free()
+	dot_nodes = []
+	pass
+
+## Creates dots at specified positions in array
+func create_dots(ats:PackedVector2Array):
+	for pos in ats:
+		create_at(pos)

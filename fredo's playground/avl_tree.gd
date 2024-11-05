@@ -1,7 +1,6 @@
 # AVLTree.gd
 class_name AVLTreeFredo
-
-const EPS = 6.0
+const EPS = 2.0
 
 var root: AVLNode = null
 
