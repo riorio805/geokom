@@ -1,14 +1,19 @@
 extends Node
 
 func _ready() -> void:
-	#print(rad_to_deg(Vector2(0,1).angle_to(Vector2(1,0))))
-	#var p1 = Vertex.create_vertex(Vector2(0,0))
-	#var p2 = Vertex.create_vertex(Vector2(0,5))
-	#var p3 = Vertex.create_vertex(Vector2(-4,0))
+	var v1 = Vertex.create_vertex(Vector2(3,16))
+	var v2 = Vertex.create_vertex(Vector2(15,9))
+	var v3 = Vertex.create_vertex(Vector2(7,7))
 	
-	
-	#print(Vertex.get_max_vertex([p1, p2, p3]))
-	#print(Vertex.get_min_vertex([p1, p2, p3]))
-	#print(InfXVertex.Direction.X_PLUS)
-	#print(InfXVertex.Direction.X_MIN * sign(-1))
+	var root = ArcTreeNode.create_node(v1)
+	print(root)
+	root = root.split_arc(v2)
+	print(root)
+	root = root.split_arc(v3)
+	print(root)
+	print()
+	var l_y = 6.49821615219116
+	var disappear = root.left.right
+	root = ArcTreeNode.delete_arc(disappear, l_y)
+	print(root)
 	pass

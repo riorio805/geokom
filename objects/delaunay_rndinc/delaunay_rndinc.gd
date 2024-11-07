@@ -2,16 +2,21 @@ extends Node2D
 
 const range_mod = 1
 
-# :Array[DEdge]
-var draw_edges:Array[DEdge] = []
+var draw_triangles:Array[DTriangle] = []
 
 var color = Color.CADET_BLUE
-var line_width = 10
+var line_width = 5
 
 func _draw() -> void:
-	for edge in draw_edges:
-		draw_line(edge.start.point, edge.end.point, color, line_width, true)
+	for tri in draw_triangles:
+		if not tri.e1.is_infinite():
+			draw_line(tri.e1.start.point, tri.e1.end.point, color, line_width, true)
+		if not tri.e2.is_infinite():
+			draw_line(tri.e2.start.point, tri.e2.end.point, color, line_width, true)
+		if not tri.e3.is_infinite():
+			draw_line(tri.e3.start.point, tri.e3.end.point, color, line_width, true)
 		pass
+
 
 func _process(_delta) -> void:
 	if Input.is_action_just_pressed("debug"):
@@ -21,10 +26,12 @@ func _process(_delta) -> void:
 
 func update_with_points(nodes:Array):
 	#print("========= UPDATE =========")
+	free_triangles()
+	
 	if len(nodes) == 0:
-		draw_edges = []
 		queue_redraw()
 		return
+	
 	var points = nodes.map(func (p): return p.position)
 	points = _array_unique(points)
 	var vertices:Array[Vertex] = []
@@ -50,8 +57,18 @@ func update_with_points(nodes:Array):
 			#print("NEW POINT: ", vtx)
 			root_tri.split_at(vtx)
 	
-	draw_edges = root_tri.get_all_leaf_edges()
+	draw_triangles = root_tri.get_all_leaf_tris()
+	print("depth: ", root_tri.get_tree_depth())
+	print("points: ", len(vertices))
+	#print(draw_triangles)
+	DTriangle.free_all_non_leaf(root_tri)
 	queue_redraw()
+
+
+func free_triangles():
+	for tri in draw_triangles:
+		tri.remove_all_references()
+	draw_triangles = []
 
 
 func _array_unique(array: Array) -> Array:

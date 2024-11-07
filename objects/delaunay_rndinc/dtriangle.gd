@@ -41,32 +41,54 @@ static func init() -> DTriangle:
 	var out = DTriangle.new()
 	return out
 
+
+static func free_all_non_leaf(tri:DTriangle):
+	var to_delete:Array[DTriangle] = [tri]
+	while not to_delete.is_empty():
+		var nxt = to_delete.pop_front()
+		if len(nxt.child_tris) == 0:
+			continue
+		else:
+			to_delete.append_array(nxt.child_tris)
+			nxt.remove_all_references()
+
+func remove_all_references():
+	self.p1 = null
+	self.p2 = null
+	self.p3 = null
+	self.e1 = null
+	self.e2 = null
+	self.e3 = null
+	self.child_tris = []
+
 func _to_string():
 	return "DTriangle: {0} -> {1} -> {2}".format([str(p1), str(p2), str(p3)])
 
 
-## Returns all edges that are part of the triangulation,
+## Returns all leaf triangles that are part of the triangulation,
 ## except the ones connected to an infinite vertex
-func get_all_leaf_edges() -> Array[DEdge]:
-	var edges = Dictionary()
+func get_all_leaf_tris() -> Array[DTriangle]:
+	var out_tris = Dictionary()
 	var tris:Array[DTriangle] = [self]
 	while not tris.is_empty():
 		var nxt_tri:DTriangle = tris.pop_front()
 		if len(nxt_tri.child_tris) == 0:
-			if not nxt_tri.e1.is_infinite():
-				edges.get_or_add(nxt_tri.e1, null)
-			if not nxt_tri.e2.is_infinite():
-				edges.get_or_add(nxt_tri.e2, null)
-			if not nxt_tri.e3.is_infinite():
-				edges.get_or_add(nxt_tri.e3, null)
+			out_tris.get_or_add(nxt_tri, null)
 		else:
 			for e in nxt_tri.child_tris:
 				tris.append(e)
-	var out:Array[DEdge] = []
-	for e in edges.keys():
+	var out:Array[DTriangle] = []
+	for e in out_tris.keys():
 		out.append(e)
 	return out
 
+
+func get_tree_depth() -> int:
+	var out = 0
+	if len(self.child_tris) == 0: return 1
+	for tri in self.child_tris:
+		out = max(out, tri.get_tree_depth() + 1)
+	return out
 
 
 func split_at(vtx:Vertex):

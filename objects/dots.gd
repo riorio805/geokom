@@ -52,7 +52,7 @@ func release_drag() -> void:
 func create_at(pos:Vector2) -> bool:
 	# Check if dot exist at pos
 	if get_dot_at(pos) != -1:
-		print(pos, " is no")
+		#print(pos, " is no")
 		return false
 	# No dots at pos, create new
 	var new_dot = dot_scene.instantiate()

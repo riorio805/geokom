@@ -2,17 +2,20 @@ extends Resource
 class_name Vertex
 
 var point:Vector2
+var face:Face = null
 var connected_edges:Array[Edge]
 
-static func create_vertex(at_point:Vector2) -> Vertex:
+static func create_vertex(at_point:Vector2, in_face:Face=null) -> Vertex:
 	var out = Vertex.new()
 	out.point = at_point
+	out.face = in_face
 	return out
 
 ## Deprecated
 static func init(at_point:Vector2) -> Vertex:
 	return create_vertex(at_point)
 
+## Deprecated
 func initialize(at_point:Vector2) -> Vertex:
 	self.point = at_point
 	return self
