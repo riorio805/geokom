@@ -4,10 +4,12 @@ class_name HeapNode
 
 var priority: int # y-position
 var is_site_event: bool
-var idx_point_or_x_pos
 
+# variabel jika is_site_event True
+var idx_point
 
-func _init(priority: int, is_site_event: bool, idx_point_or_x_pos):
-	self.priority = priority
-	self.is_site_event = is_site_event
-	self.idx_point_or_x_pos = idx_point_or_x_pos
+# variabel jika is_site_event False (circle event)
+var left_focus:Vector2
+var middle_node:AVLNode
+var right_focus:Vector2
+var intersection_point:Vector2

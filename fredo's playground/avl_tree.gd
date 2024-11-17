@@ -18,10 +18,6 @@ func _update_height(node: AVLNode) -> void:
 func _balance_factor(node: AVLNode) -> int:
 	return _get_height(node.left) - _get_height(node.right)
 
-func _init():
-	var a = _get_breakpoint(Vector2(542, 103), Vector2(483, 193), 250)
-	print(a)
-
 # Rotation functions
 func _rotate_right(y: AVLNode) -> AVLNode:
 	var x = y.left
@@ -31,16 +27,15 @@ func _rotate_right(y: AVLNode) -> AVLNode:
 	x.right = y
 	y.left = t2
 
+	# update parents
+	x.parent = y.parent
+	y.parent = x
+	if t2 != null:
+		t2.parent = y
+
 	# Update heights
 	_update_height(y)
 	_update_height(x)
-
-	# Update successor and predecessor pointers
-	#y.predecessor = x
-	#x.successor = y
-	#if t2 != null:
-		#t2.predecessor = y
-		#y.successor = t2
 
 	return x
 
@@ -57,17 +52,16 @@ func _rotate_left(x: AVLNode) -> AVLNode:
 	y.left = x
 	x.right = t2
 	
+	# update parent
+	y.parent = x.parent
+	x.parent = y
+	if t2 != null:
+		t2.parent = x
+	
 
 	# Update heights
 	_update_height(x)
 	_update_height(y)
-
-	# Update successor and predecessor pointers
-	#x.successor = y
-	#y.predecessor = x
-	#if t2 != null:
-		#t2.successor = x
-		#x.predecessor = t2
 
 	return y
 
@@ -81,11 +75,14 @@ func _balance(node: AVLNode) -> AVLNode:
 		if _balance_factor(node.left) < 0:
 			# kiri kanan lebih tinggi dari kiri kiri
 			node.left = _rotate_left(node.left)
+			node.left.parent = node
 		return _rotate_right(node)
+		
 	elif _balance_factor(node) < -1:
 		# kanan lebih tinggi
 		if _balance_factor(node.right) > 0:
 			node.right = _rotate_right(node.right)
+			node.right.parent = node
 		return _rotate_left(node)
 
 	return node
@@ -109,12 +106,10 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 	
 	var intersection_x = (c2 - c1)/(m1 - m2)
 	
-	
 	var valid1 = (intersection_x > p1.x) == (d1.x>0)
 	var valid2 = (intersection_x > p2.x) == (d2.x>0)
 
 	if valid1 and valid2:
-		
 		var ans = Vector2(intersection_x, intersection_x*m1+c1)
 		print(str(p1) + str(theta1).substr(0, 4) + " berpotongan dengan " + str(p2) + str(theta2).substr(0, 4) + " di " + str(ans))
 		
@@ -124,9 +119,8 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 		return null
 		
 
-# Helper to set predecessor and successor during insertion
+# update edge tepat di kanan arc & cek circle event
 func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
-	# update edge tepat di kanan arc & cek circle event
 	
 	node.right_edge_start = start_point
 	#add_circle.emit(node.right_edge_start, 10)
@@ -137,7 +131,7 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 		# cek intersection left
 		var voronoi_vertex = get_half_line_intersection(node.prev.right_edge_start, node.right_edge_start, node.prev.right_edge_direction, node.right_edge_direction)
 		if voronoi_vertex != null:
-			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.arc_focus), voronoi_vertex.x)
+			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.arc_focus), node, voronoi_vertex)
 			#add_circle.emit(voronoi_vertex, 10)
 			#node.next.ends_in_directrix = voronoi_vertex.y
 			add_circle.emit(voronoi_vertex, 10)
@@ -148,22 +142,20 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 		# cek intersection right
 		var voronoi_vertex = get_half_line_intersection(node.right_edge_start, node.next.right_edge_start, node.right_edge_direction, node.next.right_edge_direction)
 		if voronoi_vertex != null:
-			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), voronoi_vertex.x)
+			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), node.next, voronoi_vertex)
 			#add_circle.emit(voronoi_vertex, 8)
 			add_circle.emit(voronoi_vertex, 10)
 			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
-	
+# memeriksa edge kiri & kanan apakah berhimpit dengan sampingnya
 func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> void:
 	# asumsi edge sudah benar
 	
 	if node.prev.prev != null:
-		print('cek kiri')
 		# check edge intersection with prev
 		var voronoi_vertex = get_half_line_intersection(node.prev.prev.right_edge_start, node.prev.right_edge_start, node.prev.prev.right_edge_direction, node.prev.right_edge_direction)
 		if voronoi_vertex != null:
-			print('cek kiri berhasil')
-			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.prev.arc_focus), voronoi_vertex.x)
+			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.prev.arc_focus), node.prev, voronoi_vertex)
 			#node.next.ends_in_directrix = voronoi_vertex.y
 			add_circle.emit(voronoi_vertex, 10)
 			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
@@ -172,7 +164,7 @@ func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> vo
 		# check edge intersection with next
 		var voronoi_vertex = get_half_line_intersection(node.right_edge_start, node.next.right_edge_start, node.right_edge_direction, node.next.right_edge_direction)
 		if voronoi_vertex != null:
-			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), voronoi_vertex.x)
+			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), node.next, voronoi_vertex)
 			#node.prev.ends_in_directrix = voronoi_vertex.y
 			add_circle.emit(voronoi_vertex, 10)
 			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
@@ -185,18 +177,21 @@ func _insert_di_paling(node: AVLNode, data: Vector2, directrix_y, is_paling_kiri
 	if is_paling_kiri:
 		# insert at left
 		node.left = _insert_di_paling(node.left, data, directrix_y, true)
+		node.left.parent = node
 	else:
 		# insert at right
 		node.right = _insert_di_paling(node.right, data, directrix_y, false)
+		node.right.parent = node
 
 	return _balance(node)
 
-# Recursive insert function that also balances the tree and updates predecessors and successors
+# Apabila menemukan site event
 func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 	if node == null:
-		print("new node")
+		#print("new node")
 		var new_node = AVLNode.new(data)
 		return new_node
+	assert(not node.is_deleted)
 
 	var right_x = get_right_breakpoint(node, directrix_y).x
 	var left_x = get_left_breakpoint(node, directrix_y).x
@@ -205,13 +200,19 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 	
 	if data.x < left_x:
 		# check site event at left
-		node.left = _site_event(node.left, data, directrix_y)
+		var a = _site_event(node.left, data, directrix_y)
+		node.left = a
+		a.parent = node
 			
 	elif data.x > right_x:
 		# check site event at right
-		node.right = _site_event(node.right, data, directrix_y)
-			
+		var b = _site_event(node.right, data, directrix_y)
+		node.right = b
+		b.parent = node
+		
 	else:
+		# TODO handle breakpoint at inf
+		
 		# sef method
 		var arc_yg_di_split = node.arc_focus
 		var arc_yg_di_tengah = data
@@ -224,57 +225,141 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 			#if arc_yg_di_tengah.x > arc_yg_di_split.x:
 		# ini nanti saja TODO
 		
-		# insert at left
-		node.left = _insert_di_paling(node.left, arc_yg_di_split, directrix_y, false)
+		if abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS and arc_yg_di_tengah.x == arc_yg_di_split.x:
+			# tidak usah insert :)
+			return node
 		
-		var new_node_left = _get_max_value_node(node.left)
-		new_node_left.prev = node.prev
-		new_node_left.next = node
-		if node.prev != null: node.prev.next = new_node_left
-		node.prev = new_node_left
-		
-		
-		# insert at right
-		node.right = _insert_di_paling(node.right, arc_yg_di_split, directrix_y, true)
-		
-		var new_node_right = _get_min_value_node(node.right)
-		new_node_right.prev = node
-		new_node_right.next = node.next
-		if node.next != null: node.next.prev = new_node_right
-		node.next = new_node_right
-		
-		# change arc_focus in middle
-		node.arc_focus = arc_yg_di_tengah
-		
-		
-		# update edge kanan kanan (kiri kiri tidak usah karena sudah otomatis)
-		var edge_kanan = [node.right_edge_start, node.right_edge_direction]
-		new_node_right.right_edge_start = edge_kanan[0]
-		new_node_right.right_edge_direction = edge_kanan[1]
-		
-		
-		# update edge tepat kiri & tepat kanan
-		var start = Vector2(data.x, new_node_left.get_y(data.x, directrix_y))
-		var teta = atan2(- node.arc_focus.y + node.prev.arc_focus.y , node.arc_focus.x - node.prev.arc_focus.x)
-		# print("teta = " + str(teta))
-		
-		node.prev.right_edge_start = start # node.get_left_breakpoint(directrix_y)
-		node.prev.right_edge_direction = teta - PI/2
-		
-		var arah = Vector2(cos(node.prev.right_edge_direction), -sin(node.prev.right_edge_direction))
-		#add_edge.emit(start, start + 300 * arah)
-		#add_circle.emit(start, 5)
-		#add_edge.emit(start, start - 300 * arah)
-		node.right_edge_start = start #node.get_right_breakpoint(directrix_y)
-		node.right_edge_direction = teta + PI/2
-		
-		_check_circle_event_on_newly_inserted_arc(node, directrix_y)
+		elif abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS and arc_yg_di_tengah.x < arc_yg_di_split.x:
+			# insert at right saja
+			print("insert di right saja")
+			var a = insert_at_right(node, arc_yg_di_split, directrix_y)
+			a.parent = node.parent
+			node = a
+			
+			# ganti arc_focus di node jadi arc_yg_di_tengah
+			node.arc_focus = arc_yg_di_tengah
+			
+			node.right_edge_start = Vector2((arc_yg_di_tengah.x + arc_yg_di_split.x)/2, VoronoiFredo.MIN_Y)
+			#print("woi", node.right_edge_start)
+			node.right_edge_direction = PI * 2 * 3 / 4 # bawah
+			
+		elif abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS and arc_yg_di_tengah.x > arc_yg_di_split.x:
+			# insert at left saja
+			print("insert di left saja")
+			var a = insert_at_left(node, arc_yg_di_split, directrix_y)
+			a.parent = node.parent
+			node = a
+			
+			node.arc_focus = arc_yg_di_tengah
+			
+			node.prev.right_edge_start = Vector2((arc_yg_di_tengah.x + arc_yg_di_split.x)/2, VoronoiFredo.MIN_Y)
+			node.prev.right_edge_direction = PI * 2 * 3 / 4 # bawah
+			
+		else:
+			# insert at both
+			var a = insert_at_right(node, arc_yg_di_split, directrix_y)
+			a.parent = node.parent
+			node = a
+			
+			var b = insert_at_left(node, arc_yg_di_split, directrix_y)
+			b.parent = node.parent
+			node = b
+			
+			# change arc_focus in middle
+			node.arc_focus = arc_yg_di_tengah
+			
+			# update edge tepat kiri & tepat kanan
+			var start = Vector2(data.x, node.prev.get_y(data.x, directrix_y))
+			var teta = atan2(- node.arc_focus.y + node.prev.arc_focus.y , node.arc_focus.x - node.prev.arc_focus.x)
+			# print("teta = " + str(teta))
+			
+			# tepat kiri
+			node.prev.right_edge_start = start # node.get_left_breakpoint(directrix_y)
+			node.prev.right_edge_direction = teta - PI/2
+			
+			# tepat kanan
+			var arah = Vector2(cos(node.prev.right_edge_direction), -sin(node.prev.right_edge_direction))
+			#add_edge.emit(start, start + 300 * arah)
+			#add_circle.emit(start, 5)
+			#add_edge.emit(start, start - 300 * arah)
+			node.right_edge_start = start #node.get_right_breakpoint(directrix_y)
+			node.right_edge_direction = teta + PI/2
+			
+			_check_circle_event_on_newly_inserted_arc(node, directrix_y)
 		
 	#debug()
 		
 
 	return _balance(node)
 
+func insert_at_right(node: AVLNode, arc_focus, directrix_y):
+	node.right = _insert_di_paling(node.right, arc_focus, directrix_y, true)
+	node.right.parent = node
+			
+	var new_node_right = _get_min_value_node(node.right)
+	
+	# update prev/next
+	new_node_right.prev = node
+	new_node_right.next = node.next
+	if node.next != null: node.next.prev = new_node_right
+	node.next = new_node_right
+	
+	
+	# update edge kanan kanan (kiri kiri tidak usah karena sudah otomatis)
+	var edge_kanan = [node.right_edge_start, node.right_edge_direction]
+	node.next.right_edge_start = edge_kanan[0]
+	node.next.right_edge_direction = edge_kanan[1]
+	
+	return create_node_copy(node)
+	
+func insert_at_left(node: AVLNode, arc_focus, directrix_y):
+	node.left = _insert_di_paling(node.left, arc_focus, directrix_y, false)
+	if node.left != null:
+		node.left.parent = node
+			
+	var new_node_left = _get_max_value_node(node.left)
+	
+	# update prev/next
+	new_node_left.prev = node.prev
+	new_node_left.next = node
+	if node.prev != null: node.prev.next = new_node_left
+	node.prev = new_node_left
+	
+	return create_node_copy(node)
+
+func create_node_copy(node: AVLNode):
+	
+	assert(not node.is_deleted)
+	
+	# perbaruhi node
+	var new_node = AVLNode.new(node.arc_focus)
+	new_node.left = node.left
+	new_node.right = node.right
+	new_node.prev = node.prev
+	new_node.next = node.next
+	new_node.parent = node.parent
+	new_node.height = node.height
+	new_node.right_edge_start = node.right_edge_start
+	new_node.right_edge_direction = node.right_edge_direction
+	new_node.height = node.height
+	
+	if node.left != null: node.left.parent = new_node
+	if node.right != null: node.right.parent = new_node
+	if node.prev != null: node.prev.next = new_node
+	if node.next != null: node.next.prev = new_node
+	if node.parent != null:
+		if node.parent.left == node:
+			node.parent.left = new_node
+		elif node.parent.right == node:
+			node.parent.right = new_node
+		else:
+			assert(false, "this should never happen")
+	
+	node.is_deleted = true
+	
+	return new_node
+	
+	
 # Public insert function
 func site_event(data: Vector2, directrix_y) -> void:
 	root = _site_event(root, data, directrix_y)
@@ -324,132 +409,229 @@ func _debug(node: AVLNode) -> String:
 	if node == null: return ""
 	return _debug(node.left) + str(node.arc_focus) + str(node.right_edge_direction).substr(0, 4) + " " + _debug(node.right)
 
-func _remove_min(node:AVLNode):
-	# syarat node harus bukan null
-	if node.left == null:
-		return null
-	return _balance(node)
-
-func _is_ded(node: AVLNode, directrix_y):
-	if node.prev == null or node.next == null: return false
-	
-	#var point = Vector2(node.arc_focus.x, node.get_y())
-	
-	#var dist1 = point.distance_squared_to(node.prev.arc_focus)
-	#var dist2 = point.distance_squared_to(node.next.arc_focus)
-	#var dist3 = (directrix_y - node.arc_focus.y)/2
-	#
-	#if dist1 == dist2 and dist1 == dist3:
-		#return true
-	#else:
-		#return false
-
 # Recursive remove function that also balances the tree
-func _remove(node: AVLNode, data_x, directrix_y) -> AVLNode:
-	if node == null:
-		print("ini harusnya tidak pernah dipanggil")
-		return null
-
-	var right_x = get_right_breakpoint(node, directrix_y).x
-	var left_x = get_left_breakpoint(node, directrix_y).x
-	print(str(node.arc_focus) + "left: " + str(left_x) + ", right: " + str(right_x))
-	#assert(left_x < right_x + 10)
+#func _remove(node: AVLNode, data_x, directrix_y) -> AVLNode:
+	#if node == null:
+		#print("ini harusnya tidak pernah dipanggil")
+		#return null
+#
+	#var right_x = get_right_breakpoint(node, directrix_y).x
+	#var left_x = get_left_breakpoint(node, directrix_y).x
+	#print(str(node.arc_focus) + "left: " + str(left_x) + ", right: " + str(right_x))
+	##assert(left_x < right_x + 10)
+	#
+	##if right_x==left_x:
+		##for i in range(5):
+			##add_circle.emit(Vector2(data_x, (directrix_y+node.arc_focus.y)/2), i*4)
+	#
+	## Find the node to be removed
+	#if not (abs(right_x-left_x) <= 2*EPS and data_x <= right_x + EPS and data_x >= left_x - EPS):
+	##if not (abs(right_x-left_x) <= 1.5):
+	##if !_is_ded(node, directrix_y):
+		#if data_x < right_x - EPS:
+			## delete left
+			#node.left = _remove(node.left, data_x, directrix_y)
+			#if node.left != null:
+				#node.left.parent = node
+		#elif data_x > left_x + EPS:
+			## delete right
+			#node.right = _remove(node.right, data_x, directrix_y)
+			#if node.right != null:
+				#node.right.parent = node
+		#else:
+			## not valid
+			#print("Circle Event not valid anymore because:")
+			#print("- right_x = ", right_x)
+			#print("- left_x = ", left_x)
+			#print("- data_x = ", data_x)
+	#else:
+		## delete current
+		#print("deleting arc")
+		#
+		#
+			#
+		#var voronoi_vertex = Vector2(data_x, node.get_y(data_x, directrix_y))
+		#
+		#if node.left == null:
+			## Node with only right child (or no child at all)
+			## update prev & next
+			#var removed_node = node
+			#removed_node.prev.next = removed_node.next
+			#removed_node.next.prev = removed_node.prev
+		#
+			## update tree
+			#node = node.right
+			#if node.right != null:
+				#node.right.parent = node.parent
+			#
+			## close 2 edge
+			#add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
+			#add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
+			#
+			## create new edge
+			#_make_new_edge(removed_node.prev, voronoi_vertex, directrix_y)
+			#
+			#
+		#elif node.right == null:
+			## Node with only left child
+			#
+			## update prev & next
+			#var removed_node = node
+			#removed_node.prev.next = removed_node.next
+			#removed_node.next.prev = removed_node.prev
+			#
+			## update tree
+			#node = node.left
+			#if node.left != null:
+				#node.left.parent = node.parent
+			#
+			## close 2 edge
+			#add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
+			#add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
+			#
+			## create new edge
+			#_make_new_edge(removed_node.next.prev, voronoi_vertex, directrix_y)
+			#
+		#else:
+			## node has left & right child
+			#
+			## update tree
+			#var tmp := _get_min_value_node(node.right)
+			#node.arc_focus = tmp.arc_focus
+			#node.right = _remove_min(node.right)
+			#
+			## update prev & next
+			#if node.right != null:
+				#var tmp1 = _get_min_value_node(node.right)
+				#node.next = tmp1
+				#tmp1.prev = node
+			#else:
+				#node.next = null
+			#
+			## close 2 edge
+			#add_edge.emit(node.prev.right_edge_start, voronoi_vertex)
+			#add_edge.emit(node.right_edge_start, voronoi_vertex)
+			#
+			## update edge kanan
+			#node.right_edge_start = tmp.right_edge_start
+			#node.right_edge_direction = tmp.right_edge_direction
+			#
+			## create new edge
+			#_make_new_edge(node.prev, voronoi_vertex, directrix_y)
+			#
+			#
+		##removed_node.free()
+#
+	#return _balance(node) if node != null else null
 	
-	#if right_x==left_x:
-		#for i in range(5):
-			#add_circle.emit(Vector2(data_x, (directrix_y+node.arc_focus.y)/2), i*4)
+func _remove_this_node(node:AVLNode, voronoi_vertex:Vector2):
 	
-	# Find the node to be removed
-	if not (abs(right_x-left_x) <= 2*EPS and data_x <= right_x + EPS and data_x >= left_x - EPS):
-	#if not (abs(right_x-left_x) <= 1.5):
-	#if !_is_ded(node, directrix_y):
-		if data_x < left_x + EPS:
-			# delete left
-			node.left = _remove(node.left, data_x, directrix_y)
-		elif data_x > right_x - EPS:
-			# delete right
-			node.right = _remove(node.right, data_x, directrix_y)
-		else:
-			# not valid
-			print("Circle Event not valid anymore because:")
-			print("- right_x = ", right_x)
-			print("- left_x = ", left_x)
-			print("- data_x = ", data_x)
+	assert(node.prev != null)
+	assert(node.next != null)
+	
+	print("deleting arc", node.arc_focus)
+	if node.left == null:
+		# Node with only right child (or no child at all)
+		# update prev & next
+		var removed_node = node
+		removed_node.prev.next = removed_node.next
+		removed_node.next.prev = removed_node.prev
+	
+		# update tree
+		removed_node.is_deleted = true
+		if node.right != null: node.right.parent = node.parent
+		node = node.right
+		
+		# close 2 edge
+		add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
+		add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
+		
+		# create new edge
+		_make_new_edge(removed_node.prev, voronoi_vertex, voronoi_vertex.y)
+		
+		
+	elif node.right == null:
+		# Node with only left child
+		
+		# update prev & next
+		var removed_node = node
+		removed_node.prev.next = removed_node.next
+		removed_node.next.prev = removed_node.prev
+		
+		# update parent & child
+		removed_node.is_deleted = true
+		node.left.parent = node.parent
+		node = node.left
+		
+		# close 2 edge
+		add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
+		add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
+		
+		# create new edge
+		_make_new_edge(removed_node.next.prev, voronoi_vertex, voronoi_vertex.y)
+		
 	else:
-		# delete current
-		print("deleting arc")
+		# node has left & right child
 		
+		# tmp = node yang dipindahkan jadi root
+		var removed_node = node
+		var tmp := _get_min_value_node(node.right)
 		
-			
-		var voronoi_vertex = Vector2(data_x, node.get_y(data_x, directrix_y))
+		# detach from old parent
+		tmp.is_deleted = true
 		
-		if node.left == null:
-			# Node with only right child (or no child at all)
-			# update prev & next
-			var removed_node = node
-			removed_node.prev.next = removed_node.next
-			removed_node.next.prev = removed_node.prev
-		
-			# update tree
-			node = node.right
-			
-			# close 2 edge
-			add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
-			add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
-			
-			# create new edge
-			_make_new_edge(removed_node.prev, voronoi_vertex, directrix_y)
-			
-			
-		elif node.right == null:
-			# Node with only left child
-			
-			# update prev & next
-			var removed_node = node
-			removed_node.prev.next = removed_node.next
-			removed_node.next.prev = removed_node.prev
-			
-			# update tree
-			node = node.left
-			
-			# close 2 edge
-			add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
-			add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
-			
-			# create new edge
-			_make_new_edge(removed_node.next.prev, voronoi_vertex, directrix_y)
-			
+		# detach from left/right from parent
+		if tmp.parent.left == tmp:
+			tmp.parent.left = tmp.right
+			if tmp.right != null: tmp.right.parent = tmp.parent
 		else:
-			# node has left & right child
-			
-			# update tree
-			var tmp := _get_min_value_node(node.right)
-			node.arc_focus = tmp.arc_focus
-			node.right = _remove_min(node.right)
-			
-			# update prev & next
-			if node.right != null:
-				var tmp1 = _get_min_value_node(node.right)
-				node.next = tmp1
-				tmp1.prev = node
-			else:
-				node.next = null
-			
-			# close 2 edge
-			add_edge.emit(node.prev.right_edge_start, voronoi_vertex)
-			add_edge.emit(node.right_edge_start, voronoi_vertex)
-			
-			# update edge kanan
-			node.right_edge_start = tmp.right_edge_start
-			node.right_edge_direction = tmp.right_edge_direction
-			
-			# create new edge
-			_make_new_edge(node.prev, voronoi_vertex, directrix_y)
-			
-			
-		#removed_node.free()
+			assert(tmp.parent.right == tmp)
+			tmp.parent.right = tmp.right
+			if tmp.right != null: tmp.right.parent = tmp.parent
+		
+		# detach from prev/next
+		if tmp.prev != null: tmp.prev.next = tmp.next
+		if tmp.next != null: tmp.next.prev = tmp.prev
+		
+		
+		node = create_node_copy(node)
+		node.arc_focus = tmp.arc_focus
+		node.right_edge_start = tmp.right_edge_start
+		node.right_edge_direction = tmp.right_edge_direction
+		
+		# update child
+		#tmp.left = node.left
+		#tmp.right = node.right
+		#tmp.left.parent = tmp
+		#if tmp.right != null: tmp.right.parent = tmp
+		
+		# update parent
+		#tmp.parent = node.parent
+		
+		# update prev (next tidak usah karena yg didelete cuman 1 node)
+		#tmp.prev = node.prev
+		#if tmp.prev != null: tmp.prev.next = tmp
+		
+	
+		
+		# close 2 edge
+		add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
+		add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
+		
+		# update edge kanan
+		#node.right_edge_start = tmp.right_edge_start
+		#node.right_edge_direction = tmp.right_edge_direction
+		
+		# create new edge
+		_make_new_edge(node.prev, voronoi_vertex, voronoi_vertex.y)
+		
+		node = tmp
+		
+		
+	#removed_node.free()
 
 	return _balance(node) if node != null else null
+
 
 # Helper function to get the minimum value node
 func _get_min_value_node(node: AVLNode) -> AVLNode:
@@ -465,8 +647,33 @@ func _get_max_value_node(node: AVLNode) -> AVLNode:
 # Public remove function
 func remove(data, directrix_y) -> void:
 	print("mau remove " + str(data))
-	root = _remove(root, data, directrix_y)
-
+	#root = _remove(root, data, directrix_y)
+	
+func remove2(left_focus:Vector2, middle_node:AVLNode, right_focus:Vector2, priority, intersection_point:Vector2):
+	
+	if (not middle_node.is_deleted) \
+		and middle_node.prev.arc_focus == left_focus \
+		and middle_node.next.arc_focus == right_focus:
+		
+		# remove now
+		if middle_node.parent == null:
+			root = _remove_this_node(middle_node, intersection_point)
+			
+		elif middle_node.parent.right == middle_node:
+			var a = _remove_this_node(middle_node, intersection_point)
+			if a != null: a.parent = middle_node.parent
+			if middle_node.parent != null: middle_node.parent.right = a
+			
+		elif middle_node.parent.left == middle_node:
+			var a = _remove_this_node(middle_node, intersection_point)
+			if a != null: a.parent = middle_node.parent
+			if middle_node.parent != null: middle_node.parent.left = a
+			
+		else:
+			print('circle event not valid anymore?')
+			assert(false, "this should never happen")
+	else:
+		print('circle event not valid anymore?')
 
 func get_right_breakpoint(node:AVLNode, directrix_y):
 	if node.next != null:
@@ -488,7 +695,8 @@ func get_left_breakpoint(node:AVLNode, directrix_y):
 
 func _get_breakpoint(p1:Vector2, p2:Vector2, directrix_y):
 	#if abs(p1.y - p2.y) < EPS:
-		#return Vector2((p1.x+p2.x)/2, VoronoiFredo.MIN_Y)
+	if p1.y == p2.y:
+		return Vector2((p1.x+p2.x)/2, VoronoiFredo.MIN_Y)
 
 	p1.y = -p1.y
 	p2.y = -p2.y
@@ -522,8 +730,8 @@ func _get_breakpoint(p1:Vector2, p2:Vector2, directrix_y):
 		# Return leftmost intersection point for Fortune's algorithm
 		var x1 = (-b - sqrt(discriminant)) / (2.0 * a)
 		var x2 = (-b + sqrt(discriminant)) / (2.0 * a)
-		print("pembagi1 ", pembagi1)
-		print("pembagi2 ", pembagi2)
+		#print("pembagi1 ", pembagi1)
+		#print("pembagi2 ", pembagi2)
 		
 		p1.y = -p1.y
 		p2.y = -p2.y
@@ -554,6 +762,3 @@ func _get_breakpoint(p1:Vector2, p2:Vector2, directrix_y):
 
 	return Vector2(ans_x, ans_y)
 	
-func turunin(start: Vector2, teta):
-	# turunin supaya tidak terlalu di atas boundary
-	pass

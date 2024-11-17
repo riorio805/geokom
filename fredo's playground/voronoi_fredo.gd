@@ -37,10 +37,11 @@ func _draw() -> void:
 		#edge[1].y = clamp(edge[1].y, -1000, 5000)
 		
 		#draw_line(edge[0], edge[1], line_color, line_width, true)
-		draw_polyline(edge, circle_event_color, line_width, true)
+		#draw_polyline(edge, circle_event_color, line_width, true)
+		pass
 		
 	for c in draw_circles:
-		draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
+		#draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
 		pass
 	
 	
@@ -59,7 +60,11 @@ func update_with_points(nodes:Array):
 	
 	# add points to min heap
 	for i in range(len(points)):
-		min_heap.insert(HeapNode.new(points[i].y, true, i))
+		var new_heap_node = HeapNode.new()
+		new_heap_node.priority = points[i].y
+		new_heap_node.is_site_event = true
+		new_heap_node.idx_point = i
+		min_heap.insert(new_heap_node)
 	# print(len(points))
 	
 	
@@ -84,7 +89,7 @@ func update_with_points(nodes:Array):
 			print("Site event")
 			
 			# make new arc
-			var p = points[heap_node.idx_point_or_x_pos]
+			var p = points[heap_node.idx_point]
 			
 			beachlines.site_event(p, heap_node.priority)
 			
@@ -96,7 +101,9 @@ func update_with_points(nodes:Array):
 			# draw line
 			draw_sketch_edges.append([Vector2(MIN_X, heap_node.priority), Vector2(MAX_X, heap_node.priority)])
 			# add_edge(Vector2(0, heap_node.priority), Vector2(1500, heap_node.priority))
-			beachlines.remove(heap_node.idx_point_or_x_pos, heap_node.priority)
+			beachlines.remove2(heap_node.left_focus, heap_node.middle_node, heap_node.right_focus, heap_node.priority, heap_node.intersection_point)
+			
+			
 		#beachlines.debug()
 		beachlines.debug2(heap_node.priority)
 		
@@ -121,9 +128,19 @@ func update_with_points(nodes:Array):
 	queue_redraw()
 	print("- - - - DONE - - - -")
 
-func add_circle_event(y_sweepline, x):
+func add_circle_event(y_sweepline, middle_arc:AVLNode, intersection_point:Vector2):
 	print("- add circle event")
-	min_heap.insert(HeapNode.new(y_sweepline, false, x))
+	
+	var circle_event = HeapNode.new()
+	
+	circle_event.priority = y_sweepline
+	circle_event.is_site_event = false
+	circle_event.left_focus = middle_arc.prev.arc_focus
+	circle_event.middle_node = middle_arc
+	circle_event.right_focus = middle_arc.next.arc_focus
+	circle_event.intersection_point = intersection_point
+	
+	min_heap.insert(circle_event)
 
 func add_edge(from:Vector2, to:Vector2):
 	#print("GAMBAR EDGEE")
