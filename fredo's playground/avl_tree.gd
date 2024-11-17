@@ -93,31 +93,31 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 	var d2 = Vector2(cos(theta2), -sin(theta2))
 	
 	var denom = d1.x * d2.y - d1.y * d2.x
-	if denom == 0:
-		print("paralel")
+	if abs(denom) < 1e-8:
+		print("Paralel")
 		return null  # Parallel lines, no intersection
 	
-	
-	var m1 = d1.y/d1.x
-	var m2 = d2.y/d2.x
+	# Menghitung titik potong garis
+	var m1 = d1.y / d1.x
+	var m2 = d2.y / d2.x
 	
 	var c1 = p1.y - m1 * p1.x
 	var c2 = p2.y - m2 * p2.x
 	
-	var intersection_x = (c2 - c1)/(m1 - m2)
+	var intersection_x = (c2 - c1) / (m1 - m2)
+	var intersection_y = intersection_x * m1 + c1
+	var intersection_point = Vector2(intersection_x, intersection_y)
 	
-	var valid1 = (intersection_x > p1.x) == (d1.x>0)
-	var valid2 = (intersection_x > p2.x) == (d2.x>0)
-
+	# Memvalidasi apakah titik potong berada di arah yang benar dari kedua garis half-line
+	var valid1 = ((intersection_point - p1).dot(d1) > 0)
+	var valid2 = ((intersection_point - p2).dot(d2) > 0)
+	
 	if valid1 and valid2:
-		var ans = Vector2(intersection_x, intersection_x*m1+c1)
-		print(str(p1) + str(theta1).substr(0, 4) + " berpotongan dengan " + str(p2) + str(theta2).substr(0, 4) + " di " + str(ans))
-		
-		return ans
+		print(str(p1) + " (" + str(theta1).substr(0, 4) + ") berpotongan dengan " + str(p2) + " (" + str(theta2).substr(0, 4) + ") di " + str(intersection_point))
+		return intersection_point
 	else:
-		print(str(p1) + str(theta1).substr(0, 4) + " tidak berhimpit " + str(p2) + str(theta2).substr(0, 4))
+		print(str(p1) + " (" + str(theta1).substr(0, 4) + ") tidak berhimpit dengan " + str(p2) + " (" + str(theta2).substr(0, 4) + ")")
 		return null
-		
 
 # update edge tepat di kanan arc & cek circle event
 func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
@@ -374,7 +374,7 @@ func debug2(directrix_y):
 	while (tmp != null):
 		debug2 += '[' + str(tmp.arc_focus) + '] ' + str(get_right_breakpoint(tmp, directrix_y)) + " "
 		tmp = tmp.next
-	print("prev/next: " + debug2)
+	#print("prev/next: " + debug2)
 
 func debug() -> void:
 	if root == null: return
