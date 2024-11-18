@@ -1,7 +1,7 @@
 extends Node2D
 
 const REALLY_HIGH = 1e4
-const REALLY_LOW = -1e6
+const REALLY_LOW = -1e5
 const HALF_EDGE_DIST = 1e7
 
 var bounding_box:Rect2 = Rect2()
@@ -22,6 +22,7 @@ func _process(_delta) -> void:
 	if Input.is_action_just_pressed("debug"):
 		queue_redraw()
 
+
 func update_camera(bounds:Rect2):
 	bounding_box = bounds
 
@@ -30,8 +31,8 @@ func update_with_points(nodes:Array):
 	if len(nodes) == 0:
 		return
 	
-	#print("=============================")
-	#print("=========== update ==========")
+	print("=============================")
+	print("=========== update ==========")
 	var points = nodes.map(func (p): return p.position)
 	# remove duplicate points
 	points = _array_unique(points)
@@ -56,13 +57,10 @@ func update_with_points(nodes:Array):
 	var root_arc = ArcTreeNode.create_node(first.vertex)
 	root_arc.event_queue = event_queue
 	
-	# TODO: preprocessing step where you take all points within 1 of root_arc
-	
-	
 	# main loop
 	var last_ly = 0
 	while not event_queue.is_empty():
-		#print(event_queue)
+		print(event_queue)
 		var nxt_event = event_queue.remove()
 		last_ly = nxt_event.y + REALLY_LOW
 		if nxt_event is SiteEvent:
@@ -70,7 +68,7 @@ func update_with_points(nodes:Array):
 		elif nxt_event is CircleEvent:
 			if nxt_event.is_valid():
 				root_arc = ArcTreeNode.delete_arc(nxt_event.arc, nxt_event.y)
-		#print(root_arc)
+		print(root_arc)
 	
 	
 	# TODO: Change infinite edge handling to extend only (dont use beachline at directrix l_y)

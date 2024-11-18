@@ -3,6 +3,7 @@
 extends Resource
 class_name ArcTreeNode
 
+const HALF_EDGE_DIST = 1e5
 const MACHINE_EPS = 1e-5
 
 # Relations to other arcs
@@ -69,8 +70,12 @@ static func get_breakpoint(left_vertex:Vertex, right_vertex:Vertex, l_y:float) -
 	
 	# Special case for y1 == 0 or y2 == 0, return vertical distance
 	# never the case that both y1 == y2 == 0, only happens when first starting
-	# and can be avoided by having directrix start 1 down from the highest point
-	assert (not (y1 < MACHINE_EPS and y2 < MACHINE_EPS), "Both points cannot be close to the directrix")
+	print(y1, "; ", y2)
+	if (y1 < MACHINE_EPS and y2 < MACHINE_EPS):
+		print("Handle both points  close to the directrix (v1={0}, v2={1})".format([left_vertex, right_vertex]))
+		return left_vertex.get_bisector(right_vertex)[0]
+		
+	assert (not (y1 < MACHINE_EPS and y2 < MACHINE_EPS), "")
 	if y1 < MACHINE_EPS:
 		@warning_ignore("confusable_local_declaration")
 		var x = left_vertex.point.x
@@ -200,6 +205,121 @@ func replace_child(from:ArcTreeNode, to:ArcTreeNode):
 # Add/split arcs
 # ==================
 
+## Special case when 2 points with really high point
+func add_arc(focus:Vertex) -> ArcTreeNode:
+	var diff = focus.point.x - self.vertex.point.x
+	# found arc, create new arc
+	var new_arc = ArcTreeNode.create_node(focus)
+	new_arc.event_queue = self.event_queue
+	
+	# focus to the right
+	if diff > 0:
+		# Get edge limit through bisector
+		var bisector = focus.vertex.get_bisector(self)
+		bisector[1] *= HALF_EDGE_DIST
+		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
+		# Create edges 
+		var edge_to_vtx_right = DCEdge.create_dcedge(end_vertex, null, self.vertex.face)
+		var edge_from_fcs_left = DCEdge.create_dcedge(null, end_vertex, new_arc.vertex.face)
+		# add edges to vertex faces
+		self.vertex.face.edge_list.append(edge_to_vtx_right)
+		new_arc.vertex.face.edge_list.append(edge_from_fcs_left)
+		
+		# then attach them to the arc edges (if already has, remove edge then attach new ones)
+		if self.next != null:
+			new_arc
+		#left_arc.left_hedge = self.left_hedge
+		#right_arc.right_hedge = self.right_hedge
+		#self.left_hedge = edge_btm_left_vtx
+		#self.right_hedge = edge_btm_vtx_right
+		#left_arc.right_hedge = edge_top_vtx_right
+		#right_arc.left_hedge = edge_top_left_vtx
+		
+		# Check for arc triples that can cause an arc to disappear,
+		if self.get_focus_angle() < -MACHINE_EPS:
+			var circle = Circle.create_from_3_points(
+				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
+			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+				self, self.vertex)
+			event_queue.add(event)
+		
+		# Do the same to other side of focus if self.next exists
+		if self.next != null:
+			var snext = self.next
+			# Get edge limit through bisector
+			var bisector2 = snext.vertex.get_bisector(focus)
+			bisector2[1] *= HALF_EDGE_DIST
+			var end_vertex2 = Vertex.create_vertex(bisector2[0] + bisector2[1])
+			# Create edges 
+			var edge_from_vtx_left = DCEdge.create_dcedge(null, end_vertex2, snext.vertex.face)
+			var edge_to_fcs_right = DCEdge.create_dcedge(end_vertex2, null, new_arc.vertex.face)
+			# add edges to vertex faces
+			snext.vertex.face.edge_list.append(edge_from_vtx_left)
+			new_arc.vertex.face.edge_list.append(edge_to_fcs_right)
+			
+			# Check for arc triples that can cause an arc to disappear,
+			if new_arc.get_focus_angle() < -MACHINE_EPS:
+				var circle = Circle.create_from_3_points(
+					new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
+				var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+					new_arc, new_arc.vertex)
+				event_queue.add(event)
+		
+		# Add to tree
+		if self.right == null:	 self.add_rightmost(new_arc)
+		else:		self.right = self.right.add_leftmost(new_arc)
+		
+	# focus to the left
+	else:
+		# Get edge limit through bisector
+		var bisector = self.vertex.get_bisector(focus)
+		bisector[1] *= HALF_EDGE_DIST
+		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
+		# Create edges 
+		var edge_from_vtx_left = DCEdge.create_dcedge(null, end_vertex, self.vertex.face)
+		var edge_to_fcs_right = DCEdge.create_dcedge(end_vertex, null, new_arc.vertex.face)
+		# add edges to vertex faces
+		self.vertex.face.edge_list.append(edge_from_vtx_left)
+		new_arc.vertex.face.edge_list.append(edge_to_fcs_right)
+		
+		# Check for arc triples that can cause an arc to disappear,
+		if self.get_focus_angle() < -MACHINE_EPS:
+			var circle = Circle.create_from_3_points(
+				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
+			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+				self, self.vertex)
+			event_queue.add(event)
+		
+		# Do the same to other side of focus if self.prev exists
+		if self.prev != null:
+			var sprev = self.prev
+			# Get edge limit through bisector
+			var bisector2 = new_arc.vertex.get_bisector(sprev)
+			bisector2[1] *= HALF_EDGE_DIST
+			var end_vertex2 = Vertex.create_vertex(bisector2[0] + bisector2[1])
+			# Create edges 
+			var edge_to_vtx_right = DCEdge.create_dcedge(end_vertex2, null, sprev.vertex.face)
+			var edge_from_fcs_left = DCEdge.create_dcedge(null, end_vertex2, new_arc.vertex.face)
+			# add edges to vertex faces
+			sprev.vertex.face.edge_list.append(edge_to_vtx_right)
+			new_arc.vertex.face.edge_list.append(edge_from_fcs_left)
+			
+			# Check for arc triples that can cause an arc to disappear,
+			if new_arc.get_focus_angle() < -MACHINE_EPS:
+				var circle = Circle.create_from_3_points(
+					new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
+				var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+					new_arc, new_arc.vertex)
+				event_queue.add(event)
+		
+		# Add to tree
+		if self.right == null:	 self.add_rightmost(new_arc)
+		else:		self.right = self.right.add_leftmost(new_arc)
+	
+	
+	return self._balance()
+
+
 # + if pt1 is to the left of pt2-pt3, 0 if near, -1 if to the right
 static func det2(pt1:Vector2, pt2:Vertex, pt3:Vertex) -> float:
 	return ((pt1.x - pt3.point.x) * (pt2.point.y - pt3.point.y)
@@ -224,6 +344,13 @@ func split_arc(focus:Vertex) -> ArcTreeNode:
 	elif self.right != null and focus.point.x > bounds[1].x:
 		self.right = self.right.split_arc(focus)
 		return self._balance()
+	
+	# Sanity check: focus really is below arc, with the y-intercept below 1e7 over point
+	# else just add directly to arc
+	var y_at_point = self.get_y_at(focus.point.x, l_y)
+	if y_at_point > self.vertex.point.y + 1e7:
+		print("Go into add_arc")
+		return self.add_arc(focus)
 	
 	# found arc, create new arcs as split
 	var old_vert = self.vertex

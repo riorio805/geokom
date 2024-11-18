@@ -59,3 +59,15 @@ static func get_min_vertex(arr:Array[Vertex]) -> Vertex:
 		func(min_vec, vec):
 			return vec if vec.less_than(min_vec) else min_vec
 	)
+
+
+## Gets the bisector expressed in 2 points, the midpoint of both vertices
+## and the (normalized) direction of the bisector, pointing right from the line self->other.
+## The direction is the zero vector if self == other (approximately).
+func get_bisector(other:Vertex) -> Array[Vector2]:
+	var m = (other.point + self.point) / 2
+	var diff = other.point - self.point
+	var dir = Vector2(diff.y, -diff.x)
+	if dir.is_zero_approx():
+		return [m, Vector2()]
+	return [m, dir.normalized()]
