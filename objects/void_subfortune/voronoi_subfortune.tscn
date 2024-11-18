@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://c64s8pcrtlvuw"]
-
-[ext_resource type="Script" path="res://objects/void_subfortune/voronoi_subfortune.gd" id="1_psnc3"]
-
-[node name="VoronoiSubfortune" type="Node2D"]
-script = ExtResource("1_psnc3")
