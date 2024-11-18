@@ -5,7 +5,14 @@ extends Resource
 var vertex:Vertex
 
 var edge_list: Array[DCEdge]
-var _upel_flag: bool = true
+var _upel_flag: bool = false
+
+static func create_face(vtx:Vertex) -> Face:
+	var out = Face.new()
+	out.vertex = vtx
+	var tmp:Array[DCEdge] = []
+	out.edge_list = tmp
+	return out
 
 
 func _update_edge_list() -> void:

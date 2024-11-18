@@ -11,6 +11,12 @@ static func create_vertex(at_point:Vector2, in_face:Face=null) -> Vertex:
 	out.face = in_face
 	return out
 
+static func create_vertex_auto_face(at_point:Vector2) -> Vertex:
+	var out = Vertex.new()
+	out.point = at_point
+	out.face = Face.create_face(out)
+	return out
+
 ## Deprecated
 static func init(at_point:Vector2) -> Vertex:
 	return create_vertex(at_point)
@@ -21,7 +27,7 @@ func initialize(at_point:Vector2) -> Vertex:
 	return self
 
 func _to_string():
-	return str(point)
+	return "vtx:{0}".format([str(point)])
 
 
 ## Returns true if `self` is lexicographically smaller than `other`, in order of y, then x.

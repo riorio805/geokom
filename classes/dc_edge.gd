@@ -25,7 +25,8 @@ static func create_dcedge(start_point:Vertex=null, end_point:Vertex=null, edge_f
 
 
 func _to_string():
-	return "DCEdge: {} -> {}".format(str(start), str(end))
+	#print(start, end)
+	return "DCEdge: {0} -> {1}".format([str(start), str(end)])
 
 ## Return length of edge
 func length():

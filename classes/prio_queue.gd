@@ -11,12 +11,18 @@ static func create_pq(initial:Array=[], value_fn:Callable=func(x):return x ) -> 
 	out.heapify()
 	return out
 
+func _to_string():
+	return str(pq.map(func(p): return [p, value_func.call(p)]))
+
 func is_empty() -> bool:
 	return len(pq) == 0
 
 func add(value):
 	pq.append(value)
 	percolate_up(len(pq)-1)
+
+func peek():
+	return pq[0]
 
 func remove():
 	var out = pq[0]

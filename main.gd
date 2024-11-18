@@ -21,6 +21,7 @@ var zoom_delta:int
 func _ready():
 	file_dialog.file_selected.connect(import_points)
 
+
 func _process(delta) -> void:
 	mouse_pos = camera.get_total_transform() * get_viewport().get_mouse_position()
 	_handle_mouse_input(delta)
