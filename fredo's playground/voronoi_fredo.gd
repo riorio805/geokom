@@ -28,10 +28,10 @@ static var MAX_X = 2000
 # Update camera bounds and adjust MIN_X, MAX_X, MIN_Y, MAX_Y accordingly
 func update_camera(bounds:Rect2):
 	bounding_box = bounds
-	MIN_X = bounding_box.position.x
-	MAX_X = bounding_box.end.x
-	MIN_Y = bounding_box.position.y
-	MAX_Y = bounding_box.end.y
+	MIN_X = bounding_box.position.x - 1000
+	MAX_X = bounding_box.end.x + 1000
+	MIN_Y = bounding_box.position.y - 1000
+	MAX_Y = bounding_box.end.y + 1000
 
 # Draw the Voronoi diagram
 func _draw() -> void:
