@@ -8,20 +8,22 @@ var draw_circles = []
 # format: [[Vector2 point, float radius], ...]
 var draw_sketch_edges = [] # untuk debug circle event
 
+# Draw settings
 const site_event_color = Color.DARK_RED
 const circle_event_color = Color.BLUE
 const voronoi_color = Color.BLACK
 const line_width = 10
 
+# Min heap for storing events
 var min_heap = MinHeap.new()
 
-
+# Bounding box size
+var bounding_box:Rect2 = Rect2()
 static var MIN_Y = -2000
 static var MAX_Y = 2500
 static var MIN_X = -2500
 static var MAX_X = 2000
 
-var bounding_box:Rect2 = Rect2()
 
 # Update camera bounds and adjust MIN_X, MAX_X, MIN_Y, MAX_Y accordingly
 func update_camera(bounds:Rect2):
@@ -55,7 +57,6 @@ func _draw() -> void:
 # Process input and redraw if necessary
 func _process(_delta) -> void:
 	if Input.is_action_pressed("debug") and Input.is_action_just_pressed("debug_color"):
-		pass
 		queue_redraw()
 
 # Update the diagram with new points
@@ -71,7 +72,9 @@ func update_with_points(nodes:Array):
 		new_heap_node.is_site_event = true
 		new_heap_node.idx_point = i
 		min_heap.insert(new_heap_node)
-
+	# print(len(points))
+	
+	# create beachlines (avl tree)
 	var beachlines := AVLTreeFredo.new()
 	
 	# Connect signals for circle events and edges
@@ -79,6 +82,7 @@ func update_with_points(nodes:Array):
 	beachlines.add_edge.connect(add_edge)
 	beachlines.add_circle.connect(add_circle)
 	
+	# create fresh edges to draw
 	draw_edges = []
 	draw_sketch_edges = []
 	draw_circles = []
@@ -89,24 +93,35 @@ func update_with_points(nodes:Array):
 		var heap_node : HeapNode = min_heap.pop()
 		
 		if heap_node.is_site_event:
-			# Handle site event
+			# if site event
+			print("Site event")
+			
+			# insert the new site into beachlines
 			var p = points[heap_node.idx_point]
 			beachlines.site_event(p, heap_node.priority)
 		else:
-			# Handle circle event
+			# if circle event
+			print("Circle event")
+			
+			# draw line
 			draw_sketch_edges.append([Vector2(MIN_X, heap_node.priority), Vector2(MAX_X, heap_node.priority)])
-			beachlines.remove2(heap_node.left_focus, heap_node.middle_node, heap_node.right_focus, heap_node.priority, heap_node.intersection_point)
-
-		beachlines.debug2(heap_node.priority)
+			beachlines.circle_event(heap_node.left_focus, heap_node.middle_node, heap_node.right_focus, heap_node.priority, heap_node.intersection_point)
+			
+			
+		#beachlines.debug()
+		#beachlines.debug2(heap_node.priority)
 		
 	# Process remaining beachlines
 	var tmp = beachlines.root
 	if tmp != null:
+		
+		# start form leftmost
 		while (tmp.prev != null):
 			tmp = tmp.prev
+		
+		# handle each unfinished edge
+		while (tmp.next != null):
 			
-		while (tmp.next != null): # karena arc terakhir tidak ada edge dikanannya
-			# Draw remaining edges
 			var start = tmp.right_edge_start
 			var dir = tmp.right_edge_direction
 			if start.y < MIN_Y:
@@ -118,7 +133,7 @@ func update_with_points(nodes:Array):
 	
 	queue_redraw()
 
-# Add a circle event to the min heap
+# add circle_event into beachlines, this function is called by beachlines itself
 func add_circle_event(y_sweepline, middle_arc:AVLNode, intersection_point:Vector2):
 	var circle_event = HeapNode.new()
 	
@@ -131,12 +146,12 @@ func add_circle_event(y_sweepline, middle_arc:AVLNode, intersection_point:Vector
 	
 	min_heap.insert(circle_event)
 
-# Add an edge to the list of edges to be drawn
+# add edge to draw, this function is called by beachlines
 func add_edge(from:Vector2, to:Vector2):
 	draw_edges.append([from, to])
 	queue_redraw()
 
-# Add a circle to the list of circles to be drawn
+# add circle to draw, this function is called by beachlines
 func add_circle(center, radius):
 	draw_circles.append([center, radius])
 	queue_redraw()
