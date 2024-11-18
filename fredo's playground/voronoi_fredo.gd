@@ -24,7 +24,8 @@ static var MAX_Y = 2500
 static var MIN_X = -2500
 static var MAX_X = 2000
 
-# Update bounding box
+
+# Update camera bounds and adjust MIN_X, MAX_X, MIN_Y, MAX_Y accordingly
 func update_camera(bounds:Rect2):
 	bounding_box = bounds
 	MIN_X = bounding_box.position.x
@@ -32,6 +33,7 @@ func update_camera(bounds:Rect2):
 	MIN_Y = bounding_box.position.y
 	MAX_Y = bounding_box.end.y
 
+# Draw the Voronoi diagram
 func _draw() -> void:
 	# draw boundary
 	draw_polyline([Vector2(MIN_X, MIN_Y), Vector2(MIN_X, MAX_Y), Vector2(MAX_X, MAX_Y), Vector2(MAX_X, MIN_Y), Vector2(MIN_X, MIN_Y)], voronoi_color, line_width, true)
@@ -40,35 +42,24 @@ func _draw() -> void:
 	for edge in draw_edges:
 		draw_polyline(edge, voronoi_color, line_width, true)
 	for edge in draw_sketch_edges:
-		#edge[0].y = clamp(edge[0].y, -1000, 5000)
-		#edge[1].y = clamp(edge[1].y, -1000, 5000)
-		
-		#draw_line(edge[0], edge[1], line_color, line_width, true)
-		#draw_polyline(edge, circle_event_color, line_width, true)
 		pass
-	
-	
+		
+	# draw circles with the largest radius
 	if len(draw_circles) > 0:
-		var best_radius = 0
-		var circles = []
+		var max_radius = draw_circles[0][1]
 		for c in draw_circles:
-			if c[1] >= best_radius:
-				best_radius = c[1]
-				circles = [c]
-			elif c[1] == best_radius:
-				circles.append(c)
-		for c in circles:
-			draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
-		
-	#for c in draw_circles:
-		#draw_circle(c[0], c[1], circle_event_color, false, line_width/2, true)
-		
+			if c[1] > max_radius:
+				max_radius = c[1]
+		for c in draw_circles:
+			if c[1] == max_radius:
+				draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
 
+# Process input and redraw if necessary
 func _process(_delta) -> void:
 	if Input.is_action_pressed("debug") and Input.is_action_just_pressed("debug_color"):
 		queue_redraw()
 
-# when points is updated
+# Update the diagram with new points
 func update_with_points(nodes:Array):
 	# get positions of nodes
 	var points := nodes.map(func (p): return p.position)
@@ -86,7 +77,7 @@ func update_with_points(nodes:Array):
 	# create beachlines (avl tree)
 	var beachlines := AVLTreeFredo.new()
 	
-	# connect singals
+	# Connect signals for circle events and edges
 	beachlines.add_circle_event.connect(add_circle_event)
 	beachlines.add_edge.connect(add_edge)
 	beachlines.add_circle.connect(add_circle)
@@ -97,7 +88,7 @@ func update_with_points(nodes:Array):
 	draw_circles = []
 	queue_redraw()
 	
-	# pop until heap is empty
+	# Process events from the min heap
 	while !min_heap.is_empty():
 		var heap_node : HeapNode = min_heap.pop()
 		
@@ -108,7 +99,6 @@ func update_with_points(nodes:Array):
 			# insert the new site into beachlines
 			var p = points[heap_node.idx_point]
 			beachlines.site_event(p, heap_node.priority)
-			
 		else:
 			# if circle event
 			print("Circle event")
@@ -121,7 +111,7 @@ func update_with_points(nodes:Array):
 		#beachlines.debug()
 		#beachlines.debug2(heap_node.priority)
 		
-	# min heap habis tapi heap masih sisa beachlines
+	# Process remaining beachlines
 	var tmp = beachlines.root
 	if tmp != null:
 		
@@ -142,12 +132,9 @@ func update_with_points(nodes:Array):
 			tmp = tmp.next
 	
 	queue_redraw()
-	print("- - - - DONE - - - -")
 
 # add circle_event into beachlines, this function is called by beachlines itself
 func add_circle_event(y_sweepline, middle_arc:AVLNode, intersection_point:Vector2):
-	print("- add circle event")
-	
 	var circle_event = HeapNode.new()
 	
 	circle_event.priority = y_sweepline
@@ -169,10 +156,11 @@ func add_circle(center, radius):
 	draw_circles.append([center, radius])
 	queue_redraw()
 	
-# sort by y-value ascending
+# Sort by y-value ascending
 func compare_y(a:Vector2, b:Vector2):
 	return a.y<b.y
 
+# Calculate the angle between three points
 ## Positive if turn left, negative if turn right
 func angle_between_points(p1:Vector2, p2:Vector2, p3:Vector2):
 	# https://stackoverflow.com/a/2150475
