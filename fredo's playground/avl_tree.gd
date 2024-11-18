@@ -113,10 +113,10 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 	var valid2 = ((intersection_point.x - p2.x)*(d2.x) >= 0) && ((intersection_point.y - p2.y)*(d2.y) >= 0)
 	
 	if valid1 and valid2:
-		print(str(p1) + " (" + str(theta1).substr(0, 4) + ") berpotongan dengan " + str(p2) + " (" + str(theta2).substr(0, 4) + ") di " + str(intersection_point))
+		print(str(p1) + " (" + str(int(theta1*180/PI)) + ") berpotongan dengan " + str(p2) + " (" + str(int(theta2*180/PI)) + ") di " + str(intersection_point))
 		return intersection_point
 	else:
-		print(str(p1) + " (" + str(theta1).substr(0, 4) + ") tidak berhimpit dengan " + str(p2) + " (" + str(theta2).substr(0, 4) + ")")
+		print(str(p1) + " (" + str(int(theta1*180/PI)) + ") tidak berhimpit dengan " + str(p2) + " (" + str(int(theta2*180/PI)) + ")")
 		return null
 
 # update edge tepat di kanan arc & cek circle event
@@ -124,10 +124,14 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 	
 	node.right_edge_start = start_point
 	#add_circle.emit(node.right_edge_start, 10)
-	var teta = atan2(-node.next.arc_focus.y + node.arc_focus.y , node.next.arc_focus.x - node.arc_focus.x)
-	node.right_edge_direction = teta - PI/2
+	var teta = vector2_to_direction(node.arc_focus, node.next.arc_focus)
+	node.right_edge_direction = teta + PI/2
 	
+	assert(node.right_edge_start.x != INF)
+	assert(node.right_edge_start.y != INF)
 	if node.prev != null:
+		assert(node.prev.right_edge_start.x != INF)
+		assert(node.prev.right_edge_start.y != INF)
 		# cek intersection left
 		var voronoi_vertex = get_half_line_intersection(node.prev.right_edge_start, node.right_edge_start, node.prev.right_edge_direction, node.right_edge_direction)
 		if voronoi_vertex != null:
@@ -151,7 +155,18 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> void:
 	# asumsi edge sudah benar
 	
-	if node.prev.prev != null:
+	# check perpotongan antara edge tepat kiri dengan tepat kanan
+	if node.prev != null and node.next != null:
+		# check edge intersection with prev
+		var voronoi_vertex = get_half_line_intersection(node.prev.right_edge_start, node.right_edge_start, node.prev.right_edge_direction, node.right_edge_direction)
+		if voronoi_vertex != null:
+			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.arc_focus), node, voronoi_vertex)
+			#node.next.ends_in_directrix = voronoi_vertex.y
+			add_circle.emit(voronoi_vertex, 10)
+			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+	
+	# check edge tepat kiri dengan kirinya lagi
+	if node.prev != null && node.prev.prev != null:
 		# check edge intersection with prev
 		var voronoi_vertex = get_half_line_intersection(node.prev.prev.right_edge_start, node.prev.right_edge_start, node.prev.prev.right_edge_direction, node.prev.right_edge_direction)
 		if voronoi_vertex != null:
@@ -160,7 +175,8 @@ func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> vo
 			add_circle.emit(voronoi_vertex, 10)
 			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
-	if node.next.next != null:
+	# check edge tepat kanan dengan kanannya lagi
+	if node.next != null && node.next.next != null:
 		# check edge intersection with next
 		var voronoi_vertex = get_half_line_intersection(node.right_edge_start, node.next.right_edge_start, node.right_edge_direction, node.next.right_edge_direction)
 		if voronoi_vertex != null:
@@ -214,82 +230,122 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 		# TODO handle breakpoint at inf
 		
 		# sef method
-		var arc_yg_di_split = node.arc_focus
-		var arc_yg_di_tengah = data
 		
 		
-		print("arc yang displit adalah " + str(arc_yg_di_split))
+		print("arc yang displit adalah " + str(node.arc_focus))
 		
-		# edge case: posisi y nya sama dengan arc_focus yang lain
-		#if arc_yg_di_split.y == arc_yg_di_tengah.y:
-			#if arc_yg_di_tengah.x > arc_yg_di_split.x:
-		# ini nanti saja TODO
 		
-		if abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS:
-			# Points have same/similar y-coordinates
-			if arc_yg_di_tengah.x == arc_yg_di_split.x:
+		if node.get_y(data.x, directrix_y) < VoronoiFredo.MIN_Y \
+			or node.get_y(data.x, directrix_y)==INF:
+			#or get(node.right_edge_start != null and node.right_edge_start.y == VoronoiFredo.MIN_Y) \
+			#or (node.prev != null and node.prev.right_edge_start.y == VoronoiFredo.MIN_Y):
+				
+			# breakpointnya berada di atas boundary, cukup insert node di salah satu saja (kiri/kanan)
+			print("di atas")
+			
+			var old_arc = node.arc_focus
+			var new_arc = data
+			
+			# Points have same/similar x-coordinates
+			if abs(old_arc.x - new_arc.x)==0:
 				# Same point, skip
 				return node
 				
-			elif arc_yg_di_tengah.x < arc_yg_di_split.x:
-				# Insert at right and create vertical edge
-				var a = insert_at_right(node, arc_yg_di_split, directrix_y)
-				a.parent = node.parent
-				node = a
-				node.arc_focus = arc_yg_di_tengah
+			elif new_arc.x < old_arc.x:
 				
-				# Set vertical edge at midpoint
-				var midpoint_x = (arc_yg_di_tengah.x + arc_yg_di_split.x)/2
-				node.right_edge_start = Vector2(midpoint_x, arc_yg_di_tengah.y)
-				node.right_edge_direction = PI/2 # Point straight down
+				# Insert at right
+				node = insert_at_right(node, old_arc, directrix_y)
+				node.arc_focus = new_arc
+				
+				# ada 2 edge yg perlu diupdate: node & node.prev
+				
+				# Update edge kepunyaan node
+				node.right_edge_start = batas_min_y(node.arc_focus, node.next.arc_focus)
+				
+				var teta = vector2_to_direction(node.arc_focus, node.next.arc_focus)
+				if sin(teta-PI/2) < 0: # ambil direction yang mengarah ke bawah
+					node.right_edge_direction = teta-PI/2
+				else:
+					node.right_edge_direction = teta+PI/2
+					
+				
+				# Update edge kepunyaan node.prev
+				if node.prev != null:
+					node.prev.right_edge_start = batas_min_y(node.prev.arc_focus, node.arc_focus)
+					
+					teta = vector2_to_direction(node.prev.arc_focus, node.arc_focus)
+					if sin(teta-PI/2) < 0: # ambil direction yang mengarah ke bawah
+						node.prev.right_edge_direction = teta-PI/2
+					else:
+						node.prev.right_edge_direction = teta+PI/2
+				
+				_check_circle_event_on_newly_inserted_arc(node, directrix_y)
+				# Add edge to drawing
+				# add_edge.emit(node.right_edge_start, node.right_edge_start + Vector2(0, VoronoiFredo.MAX_Y))
+				
+			else:
+				
+				# Insert at left
+				node = insert_at_left(node, old_arc, directrix_y)
+				node.arc_focus = new_arc
+				
+				
+				# ada 2 node yg perlu diupdate edge-nya: node.prev & node
+				
+				# Update edge kepunyaan node
+				print("woi2")
+				if node.next != null:
+					print("woi")
+					node.right_edge_start = batas_min_y(node.arc_focus, node.next.arc_focus)
+					
+					var teta = vector2_to_direction(node.arc_focus, node.next.arc_focus)
+					if sin(teta-PI/2) < 0: # ambil direction yang mengarah ke bawah
+						node.right_edge_direction = teta-PI/2
+					else:
+						node.right_edge_direction = teta+PI/2
+						
+				
+				# Update edge kepunyaan node.prev
+				node.prev.right_edge_start = batas_min_y(node.prev.arc_focus, node.arc_focus)
+				
+				var teta = vector2_to_direction(node.prev.arc_focus, node.arc_focus)
+				if sin(teta-PI/2) < 0: # ambil direction yang mengarah ke bawah
+					node.prev.right_edge_direction = teta-PI/2
+				else:
+					node.prev.right_edge_direction = teta+PI/2
+				
+				_check_circle_event_on_newly_inserted_arc(node, directrix_y)
 				
 				# Add edge to drawing
-				add_edge.emit(node.right_edge_start, 
-							 node.right_edge_start + Vector2(0, VoronoiFredo.MAX_Y))
-				
-			else: # arc_yg_di_tengah.x > arc_yg_di_split.x
-				# Insert at left and create vertical edge
-				var a = insert_at_left(node, arc_yg_di_split, directrix_y)
-				a.parent = node.parent
-				node = a
-				node.arc_focus = arc_yg_di_tengah
-				
-				# Set vertical edge at midpoint
-				var midpoint_x = (arc_yg_di_tengah.x + arc_yg_di_split.x)/2
-				node.prev.right_edge_start = Vector2(midpoint_x, arc_yg_di_tengah.y)
-				node.prev.right_edge_direction = PI/2 # Point straight down
-				
-				# Add edge to drawing
-				add_edge.emit(node.prev.right_edge_start,
-							 node.prev.right_edge_start + Vector2(0, VoronoiFredo.MAX_Y))
+				# add_edge.emit(node.prev.right_edge_start, node.prev.right_edge_start + Vector2(0, VoronoiFredo.MAX_Y))
+				# TODO: FIX KALAU 3 TITIK MEMBENTUK V DGN POSISI DI DEKAT BOUNDARY ATAS
+		
 		else:
 			# insert at both
-			var a = insert_at_right(node, arc_yg_di_split, directrix_y)
-			a.parent = node.parent
-			node = a
 			
-			var b = insert_at_left(node, arc_yg_di_split, directrix_y)
-			b.parent = node.parent
-			node = b
+			
+			var arc_yg_di_split = node.arc_focus
+			var arc_yg_di_tengah = data
+		
+			# (tidak perlu update parent karena insertnya di child dari node)
+			node = insert_at_right(node, arc_yg_di_split, directrix_y)
+			node = insert_at_left(node, arc_yg_di_split, directrix_y)
 			
 			# change arc_focus in middle
+			# (tidak usah is_deleted=true karena node sudah merupakan copy dari node)
 			node.arc_focus = arc_yg_di_tengah
 			
 			# update edge tepat kiri & tepat kanan
 			var start = Vector2(data.x, node.prev.get_y(data.x, directrix_y))
-			var teta = atan2(- node.arc_focus.y + node.prev.arc_focus.y , node.arc_focus.x - node.prev.arc_focus.x)
-			# print("teta = " + str(teta))
+			var teta = vector2_to_direction(node.arc_focus, node.prev.arc_focus)
 			
 			# tepat kiri
-			node.prev.right_edge_start = start # node.get_left_breakpoint(directrix_y)
+			node.prev.right_edge_start = start
 			node.prev.right_edge_direction = teta - PI/2
 			
 			# tepat kanan
-			var arah = Vector2(cos(node.prev.right_edge_direction), -sin(node.prev.right_edge_direction))
-			#add_edge.emit(start, start + 300 * arah)
-			#add_circle.emit(start, 5)
-			#add_edge.emit(start, start - 300 * arah)
-			node.right_edge_start = start #node.get_right_breakpoint(directrix_y)
+			#var arah = Vector2(cos(node.prev.right_edge_direction), -sin(node.prev.right_edge_direction))
+			node.right_edge_start = start
 			node.right_edge_direction = teta + PI/2
 			
 			_check_circle_event_on_newly_inserted_arc(node, directrix_y)
@@ -298,6 +354,22 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 		
 
 	return _balance(node)
+	
+func batas_min_y(arc1:Vector2, arc2:Vector2):
+	# mencari titik pada garis min_y yang memiliki jarak yang sama terhadap arc1 & arc2
+	# assert(arc2.x>=arc1.x)
+	
+	var MIN_Y = VoronoiFredo.MIN_Y
+	
+	var mtk = -pow(arc1.y-MIN_Y, 2) + pow(arc1.x-arc2.x, 2) + pow(arc2.y-MIN_Y, 2)
+	mtk /= 2 * (arc2.x-arc1.x)
+	
+	return Vector2(arc1.x+mtk, MIN_Y)
+
+func vector2_to_direction(from:Vector2, to:Vector2):
+	var teta = atan2(- from.y + to.y , from.x - to.x)
+	#var teta = atan2(- to.y + from.y , to.x - from.x)
+	return teta
 
 func insert_at_right(node: AVLNode, arc_focus, directrix_y):
 	node.right = _insert_di_paling(node.right, arc_focus, directrix_y, true)
@@ -313,16 +385,14 @@ func insert_at_right(node: AVLNode, arc_focus, directrix_y):
 	
 	
 	# update edge kanan kanan (kiri kiri tidak usah karena sudah otomatis)
-	var edge_kanan = [node.right_edge_start, node.right_edge_direction]
-	node.next.right_edge_start = edge_kanan[0]
-	node.next.right_edge_direction = edge_kanan[1]
+	node.next.right_edge_start = node.right_edge_start
+	node.next.right_edge_direction = node.right_edge_direction
 	
 	return create_node_copy(node)
 	
 func insert_at_left(node: AVLNode, arc_focus, directrix_y):
 	node.left = _insert_di_paling(node.left, arc_focus, directrix_y, false)
-	if node.left != null:
-		node.left.parent = node
+	node.left.parent = node
 			
 	var new_node_left = _get_max_value_node(node.left)
 	
