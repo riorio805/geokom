@@ -1,14 +1,17 @@
-[gd_scene load_steps=5 format=3 uid="uid://bupv11kto8goj"]
+[gd_scene load_steps=6 format=3 uid="uid://bupv11kto8goj"]
 
 [ext_resource type="Script" path="res://main.gd" id="1_qi70q"]
 [ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="2_5118a"]
+[ext_resource type="PackedScene" uid="uid://c1ju12m3xqv86" path="res://objects/void_fortune/voronoi_fortune.tscn" id="2_a0gd3"]
 [ext_resource type="PackedScene" uid="uid://dpuik6gfo4ogr" path="res://objects/delaunay_rndinc/delaunay_rndinc.tscn" id="2_ffmj8"]
 [ext_resource type="Script" path="res://camera.gd" id="4_qpr45"]
 
 [node name="Main" type="Node2D" node_paths=PackedStringArray("dots_node", "draw_node")]
 script = ExtResource("1_qi70q")
 dots_node = NodePath("Dots")
-draw_node = NodePath("DelaunayRandInc")
+draw_node = NodePath("VoronoiFortune")
+
+[node name="VoronoiFortune" parent="." instance=ExtResource("2_a0gd3")]
 
 [node name="DelaunayRandInc" parent="." instance=ExtResource("2_ffmj8")]
 

@@ -22,8 +22,8 @@ Start="*res://start.gd"
 
 [display]
 
-window/size/viewport_width=1600
-window/size/viewport_height=900
+window/size/viewport_width=1200
+window/size/viewport_height=800
 
 [editor_plugins]
 

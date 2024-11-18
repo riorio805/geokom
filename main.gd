@@ -21,11 +21,12 @@ var zoom_delta:int
 func _ready():
 	file_dialog.file_selected.connect(import_points)
 
+
 func _process(delta) -> void:
 	mouse_pos = camera.get_total_transform() * get_viewport().get_mouse_position()
 	_handle_mouse_input(delta)
 	
-	if dots_node.consume_update():
+	if true:
 		if draw_node.has_method("update_camera"):
 			draw_node.update_camera(camera.get_camera_rect())
 		draw_node.update_with_points(dots_node.dot_nodes)
