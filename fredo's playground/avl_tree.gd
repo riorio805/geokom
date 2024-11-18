@@ -225,36 +225,43 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 			#if arc_yg_di_tengah.x > arc_yg_di_split.x:
 		# ini nanti saja TODO
 		
-		if abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS and arc_yg_di_tengah.x == arc_yg_di_split.x:
-			# tidak usah insert :)
-			return node
-		
-		elif abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS and arc_yg_di_tengah.x < arc_yg_di_split.x:
-			# insert at right saja
-			print("insert di right saja")
-			var a = insert_at_right(node, arc_yg_di_split, directrix_y)
-			a.parent = node.parent
-			node = a
-			
-			# ganti arc_focus di node jadi arc_yg_di_tengah
-			node.arc_focus = arc_yg_di_tengah
-			
-			node.right_edge_start = Vector2((arc_yg_di_tengah.x + arc_yg_di_split.x)/2, VoronoiFredo.MIN_Y)
-			#print("woi", node.right_edge_start)
-			node.right_edge_direction = PI * 2 * 3 / 4 # bawah
-			
-		elif abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS and arc_yg_di_tengah.x > arc_yg_di_split.x:
-			# insert at left saja
-			print("insert di left saja")
-			var a = insert_at_left(node, arc_yg_di_split, directrix_y)
-			a.parent = node.parent
-			node = a
-			
-			node.arc_focus = arc_yg_di_tengah
-			
-			node.prev.right_edge_start = Vector2((arc_yg_di_tengah.x + arc_yg_di_split.x)/2, VoronoiFredo.MIN_Y)
-			node.prev.right_edge_direction = PI * 2 * 3 / 4 # bawah
-			
+		if abs(arc_yg_di_tengah.y-arc_yg_di_split.y) < EPS:
+			# Points have same/similar y-coordinates
+			if arc_yg_di_tengah.x == arc_yg_di_split.x:
+				# Same point, skip
+				return node
+				
+			elif arc_yg_di_tengah.x < arc_yg_di_split.x:
+				# Insert at right and create vertical edge
+				var a = insert_at_right(node, arc_yg_di_split, directrix_y)
+				a.parent = node.parent
+				node = a
+				node.arc_focus = arc_yg_di_tengah
+				
+				# Set vertical edge at midpoint
+				var midpoint_x = (arc_yg_di_tengah.x + arc_yg_di_split.x)/2
+				node.right_edge_start = Vector2(midpoint_x, arc_yg_di_tengah.y)
+				node.right_edge_direction = PI/2 # Point straight down
+				
+				# Add edge to drawing
+				add_edge.emit(node.right_edge_start, 
+							 node.right_edge_start + Vector2(0, VoronoiFredo.MAX_Y))
+				
+			else: # arc_yg_di_tengah.x > arc_yg_di_split.x
+				# Insert at left and create vertical edge
+				var a = insert_at_left(node, arc_yg_di_split, directrix_y)
+				a.parent = node.parent
+				node = a
+				node.arc_focus = arc_yg_di_tengah
+				
+				# Set vertical edge at midpoint
+				var midpoint_x = (arc_yg_di_tengah.x + arc_yg_di_split.x)/2
+				node.prev.right_edge_start = Vector2(midpoint_x, arc_yg_di_tengah.y)
+				node.prev.right_edge_direction = PI/2 # Point straight down
+				
+				# Add edge to drawing
+				add_edge.emit(node.prev.right_edge_start,
+							 node.prev.right_edge_start + Vector2(0, VoronoiFredo.MAX_Y))
 		else:
 			# insert at both
 			var a = insert_at_right(node, arc_yg_di_split, directrix_y)
@@ -620,4 +627,3 @@ func _get_breakpoint(p1:Vector2, p2:Vector2, directrix_y):
 		pass
 
 	return Vector2(ans_x, ans_y)
-	
