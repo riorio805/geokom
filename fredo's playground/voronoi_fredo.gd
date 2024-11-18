@@ -8,21 +8,23 @@ var draw_circles = []
 # format: [[Vector2 point, float radius], ...]
 var draw_sketch_edges = [] # untuk debug circle event
 
+# Draw settings
 const site_event_color = Color.DARK_RED
 const circle_event_color = Color.BLUE
 const voronoi_color = Color.BLACK
 const line_width = 10
 
+# Min heap for storing events
 var min_heap = MinHeap.new()
 
-
+# Bounding box size
+var bounding_box:Rect2 = Rect2()
 static var MIN_Y = -2000
 static var MAX_Y = 2500
 static var MIN_X = -2500
 static var MAX_X = 2000
 
-var bounding_box:Rect2 = Rect2()
-
+# Update bounding box
 func update_camera(bounds:Rect2):
 	bounding_box = bounds
 	MIN_X = bounding_box.position.x
@@ -36,10 +38,6 @@ func _draw() -> void:
 	
 	# draw edges
 	for edge in draw_edges:
-		#edge[0].y = clamp(edge[0].y, -1000, 5000)
-		#edge[1].y = clamp(edge[1].y, -1000, 5000)
-		
-		#draw_line(edge[0], edge[1], line_color, line_width, true)
 		draw_polyline(edge, voronoi_color, line_width, true)
 	for edge in draw_sketch_edges:
 		#edge[0].y = clamp(edge[0].y, -1000, 5000)
@@ -48,19 +46,22 @@ func _draw() -> void:
 		#draw_line(edge[0], edge[1], line_color, line_width, true)
 		#draw_polyline(edge, circle_event_color, line_width, true)
 		pass
-		
+	
+	
 	if len(draw_circles) > 0:
-		var best_circle = draw_circles[0]
+		var best_radius = 0
+		var circles = []
 		for c in draw_circles:
-			if c[1] > best_circle[1]:
-				best_circle = c
-		draw_circle(best_circle[0], best_circle[1], circle_event_color, false, line_width, true)
+			if c[1] >= best_radius:
+				best_radius = c[1]
+				circles = [c]
+			elif c[1] == best_radius:
+				circles.append(c)
+		for c in circles:
+			draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
 		
 	#for c in draw_circles:
-		#draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
-	
-	
-	#print(draw_edges)
+		#draw_circle(c[0], c[1], circle_event_color, false, line_width/2, true)
 		
 
 func _process(_delta) -> void:
@@ -116,11 +117,11 @@ func update_with_points(nodes:Array):
 			# draw line
 			draw_sketch_edges.append([Vector2(MIN_X, heap_node.priority), Vector2(MAX_X, heap_node.priority)])
 			# add_edge(Vector2(0, heap_node.priority), Vector2(1500, heap_node.priority))
-			beachlines.remove2(heap_node.left_focus, heap_node.middle_node, heap_node.right_focus, heap_node.priority, heap_node.intersection_point)
+			beachlines.circle_event(heap_node.left_focus, heap_node.middle_node, heap_node.right_focus, heap_node.priority, heap_node.intersection_point)
 			
 			
 		#beachlines.debug()
-		beachlines.debug2(heap_node.priority)
+		#beachlines.debug2(heap_node.priority)
 		
 	# min heap habis tapi heap masih sisa beachlines
 	var tmp = beachlines.root
@@ -139,7 +140,6 @@ func update_with_points(nodes:Array):
 			add_edge(start, start + 10000 * Vector2(cos(dir), -sin(dir)))
 			tmp = tmp.next
 	
-	#beachlines.free()
 	queue_redraw()
 	print("- - - - DONE - - - -")
 
