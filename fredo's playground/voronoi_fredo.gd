@@ -16,10 +16,10 @@ const line_width = 0.5
 var min_heap = MinHeap.new()
 
 
-static var MIN_Y = -500
-static var MAX_Y = 500
-static var MIN_X = 0
-static var MAX_X = 1000
+static var MIN_Y = -2000
+static var MAX_Y = 2000
+static var MIN_X = -2000
+static var MAX_X = 2000
 
 func _draw() -> void:
 	# draw boundary

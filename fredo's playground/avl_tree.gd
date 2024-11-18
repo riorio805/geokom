@@ -109,8 +109,8 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 	var intersection_point = Vector2(intersection_x, intersection_y)
 	
 	# Memvalidasi apakah titik potong berada di arah yang benar dari kedua garis half-line
-	var valid1 = ((intersection_point.x - p1.x)*(d1.x) >= 0) && ((intersection_point.y - p1.y)*(d1.y) >= 0)
-	var valid2 = ((intersection_point.x - p2.x)*(d2.x) >= 0) && ((intersection_point.y - p2.y)*(d2.y) >= 0)
+	var valid1 = ((intersection_point.x - p1.x)*(d1.x) >= -EPS) && ((intersection_point.y - p1.y)*(d1.y) >= -EPS)
+	var valid2 = ((intersection_point.x - p2.x)*(d2.x) >= -EPS) && ((intersection_point.y - p2.y)*(d2.y) >= -EPS)
 	
 	if valid1 and valid2:
 		print(str(p1) + " (" + str(int(theta1*180/PI)) + ") berpotongan dengan " + str(p2) + " (" + str(int(theta2*180/PI)) + ") di " + str(intersection_point))
@@ -235,8 +235,8 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 		print("arc yang displit adalah " + str(node.arc_focus))
 		
 		
-		if node.get_y(data.x, directrix_y) < VoronoiFredo.MIN_Y \
-			or node.get_y(data.x, directrix_y)==INF:
+		if node.get_y(data.x, directrix_y)==INF or node.get_y(data.x, directrix_y)==-INF:
+			#or node.get_y(data.x, directrix_y) < VoronoiFredo.MIN_Y \
 			#or get(node.right_edge_start != null and node.right_edge_start.y == VoronoiFredo.MIN_Y) \
 			#or (node.prev != null and node.prev.right_edge_start.y == VoronoiFredo.MIN_Y):
 				
@@ -336,8 +336,14 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 			node.arc_focus = arc_yg_di_tengah
 			
 			# update edge tepat kiri & tepat kanan
-			var start = Vector2(data.x, node.prev.get_y(data.x, directrix_y))
+			var start_tmp = batas_min_y(data, node.arc_focus) # TODO: HANDLE X NYA KALO MIRIP
 			var teta = vector2_to_direction(node.arc_focus, node.prev.arc_focus)
+			
+			#assert(tan(teta+PI/2) != INF)
+			#var start = Vector2(data.x, start_tmp.y - (data.x - start_tmp.x) * tan(teta+PI/2))
+			#print(start, start_tmp, tan(teta+PI/2))
+			
+			var start = Vector2(data.x, node.prev.get_y(data.x, directrix_y))
 			
 			# tepat kiri
 			node.prev.right_edge_start = start
