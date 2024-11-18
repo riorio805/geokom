@@ -45,7 +45,7 @@ func get_camera_rect() -> Rect2:
 
 
 ## Change the real camera zoom to the power `by` (constant base)
-func change_zoom(by:int, point:Vector2=Vector2.ZERO):
+func change_zoom(by:int, _point:Vector2=Vector2.ZERO):
 	by = clampi(by, zoom_exp_min - zoom_exp, zoom_exp_max - zoom_exp)
 	zoom_exp += by
 	pass

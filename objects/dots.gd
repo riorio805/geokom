@@ -15,7 +15,6 @@ func _process(_delta) -> void:
 			print(dot_nodes)
 		if Input.is_action_just_pressed("debug_delete_all_dots"):
 			remove_all_dots()
-			updated = true
 
 ## Consumes an update check if dots has been updated since last time (true if update, false if no update)
 func consume_update() -> bool:
@@ -53,6 +52,7 @@ func release_drag() -> void:
 func create_at(pos:Vector2) -> bool:
 	# Check if dot exist at pos
 	if get_dot_at(pos) != -1:
+		#print(pos, " is no")
 		return false
 	# No dots at pos, create new
 	var new_dot = dot_scene.instantiate()
@@ -87,7 +87,7 @@ func remove_all_dots() -> void:
 	for n in dot_nodes:
 		n.queue_free()
 	dot_nodes = []
-	pass
+	updated = true
 
 ## Creates dots at specified positions in array
 func create_dots(ats:PackedVector2Array):

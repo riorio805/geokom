@@ -1,11 +1,18 @@
 ## Represents a Face of the diagram
 class_name Face
-extends RefCounted
+extends Resource
 
 var vertex:Vertex
 
 var edge_list: Array[DCEdge]
-var _upel_flag: bool = true
+var _upel_flag: bool = false
+
+static func create_face(vtx:Vertex) -> Face:
+	var out = Face.new()
+	out.vertex = vtx
+	var tmp:Array[DCEdge] = []
+	out.edge_list = tmp
+	return out
 
 
 func _update_edge_list() -> void:
@@ -19,8 +26,8 @@ func _update_edge_list() -> void:
 func contains_point(p:Vector2) -> bool:
 	if _upel_flag: _update_edge_list()
 	for edge in edge_list:
-		var v1 = edge.end - edge.start
-		var v2 = p - edge.end
+		var v1 = edge.end.point - edge.start.point
+		var v2 = p - edge.end.point
 		if v1.angle_to(v2) < 0:
 			return false
 	return true
