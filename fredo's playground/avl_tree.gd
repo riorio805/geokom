@@ -109,8 +109,8 @@ func get_half_line_intersection(p1: Vector2, p2: Vector2, theta1: float, theta2:
 	var intersection_point = Vector2(intersection_x, intersection_y)
 	
 	# Memvalidasi apakah titik potong berada di arah yang benar dari kedua garis half-line
-	var valid1 = ((intersection_point - p1).dot(d1) > 0)
-	var valid2 = ((intersection_point - p2).dot(d2) > 0)
+	var valid1 = ((intersection_point.x - p1.x)*(d1.x) >= 0) && ((intersection_point.y - p1.y)*(d1.y) >= 0)
+	var valid2 = ((intersection_point.x - p2.x)*(d2.x) >= 0) && ((intersection_point.y - p2.y)*(d2.y) >= 0)
 	
 	if valid1 and valid2:
 		print(str(p1) + " (" + str(theta1).substr(0, 4) + ") berpotongan dengan " + str(p2) + " (" + str(theta2).substr(0, 4) + ") di " + str(intersection_point))
@@ -196,7 +196,7 @@ func _site_event(node: AVLNode, data: Vector2, directrix_y) -> AVLNode:
 	var right_x = get_right_breakpoint(node, directrix_y).x
 	var left_x = get_left_breakpoint(node, directrix_y).x
 	
-	print(left_x, " <> ", right_x)
+	#print(left_x, " <> ", right_x)
 	
 	if data.x < left_x:
 		# check site event at left
@@ -409,127 +409,12 @@ func _debug(node: AVLNode) -> String:
 	if node == null: return ""
 	return _debug(node.left) + str(node.arc_focus) + str(node.right_edge_direction).substr(0, 4) + " " + _debug(node.right)
 
-# Recursive remove function that also balances the tree
-#func _remove(node: AVLNode, data_x, directrix_y) -> AVLNode:
-	#if node == null:
-		#print("ini harusnya tidak pernah dipanggil")
-		#return null
-#
-	#var right_x = get_right_breakpoint(node, directrix_y).x
-	#var left_x = get_left_breakpoint(node, directrix_y).x
-	#print(str(node.arc_focus) + "left: " + str(left_x) + ", right: " + str(right_x))
-	##assert(left_x < right_x + 10)
-	#
-	##if right_x==left_x:
-		##for i in range(5):
-			##add_circle.emit(Vector2(data_x, (directrix_y+node.arc_focus.y)/2), i*4)
-	#
-	## Find the node to be removed
-	#if not (abs(right_x-left_x) <= 2*EPS and data_x <= right_x + EPS and data_x >= left_x - EPS):
-	##if not (abs(right_x-left_x) <= 1.5):
-	##if !_is_ded(node, directrix_y):
-		#if data_x < right_x - EPS:
-			## delete left
-			#node.left = _remove(node.left, data_x, directrix_y)
-			#if node.left != null:
-				#node.left.parent = node
-		#elif data_x > left_x + EPS:
-			## delete right
-			#node.right = _remove(node.right, data_x, directrix_y)
-			#if node.right != null:
-				#node.right.parent = node
-		#else:
-			## not valid
-			#print("Circle Event not valid anymore because:")
-			#print("- right_x = ", right_x)
-			#print("- left_x = ", left_x)
-			#print("- data_x = ", data_x)
-	#else:
-		## delete current
-		#print("deleting arc")
-		#
-		#
-			#
-		#var voronoi_vertex = Vector2(data_x, node.get_y(data_x, directrix_y))
-		#
-		#if node.left == null:
-			## Node with only right child (or no child at all)
-			## update prev & next
-			#var removed_node = node
-			#removed_node.prev.next = removed_node.next
-			#removed_node.next.prev = removed_node.prev
-		#
-			## update tree
-			#node = node.right
-			#if node.right != null:
-				#node.right.parent = node.parent
-			#
-			## close 2 edge
-			#add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
-			#add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
-			#
-			## create new edge
-			#_make_new_edge(removed_node.prev, voronoi_vertex, directrix_y)
-			#
-			#
-		#elif node.right == null:
-			## Node with only left child
-			#
-			## update prev & next
-			#var removed_node = node
-			#removed_node.prev.next = removed_node.next
-			#removed_node.next.prev = removed_node.prev
-			#
-			## update tree
-			#node = node.left
-			#if node.left != null:
-				#node.left.parent = node.parent
-			#
-			## close 2 edge
-			#add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
-			#add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
-			#
-			## create new edge
-			#_make_new_edge(removed_node.next.prev, voronoi_vertex, directrix_y)
-			#
-		#else:
-			## node has left & right child
-			#
-			## update tree
-			#var tmp := _get_min_value_node(node.right)
-			#node.arc_focus = tmp.arc_focus
-			#node.right = _remove_min(node.right)
-			#
-			## update prev & next
-			#if node.right != null:
-				#var tmp1 = _get_min_value_node(node.right)
-				#node.next = tmp1
-				#tmp1.prev = node
-			#else:
-				#node.next = null
-			#
-			## close 2 edge
-			#add_edge.emit(node.prev.right_edge_start, voronoi_vertex)
-			#add_edge.emit(node.right_edge_start, voronoi_vertex)
-			#
-			## update edge kanan
-			#node.right_edge_start = tmp.right_edge_start
-			#node.right_edge_direction = tmp.right_edge_direction
-			#
-			## create new edge
-			#_make_new_edge(node.prev, voronoi_vertex, directrix_y)
-			#
-			#
-		##removed_node.free()
-#
-	#return _balance(node) if node != null else null
-	
 func _remove_this_node(node:AVLNode, voronoi_vertex:Vector2):
 	
 	assert(node.prev != null)
 	assert(node.next != null)
 	
-	print("deleting arc", node.arc_focus)
+	#print("deleting arc", node.arc_focus)
 	if node.left == null:
 		# Node with only right child (or no child at all)
 		# update prev & next
@@ -625,10 +510,6 @@ func _get_max_value_node(node: AVLNode) -> AVLNode:
 		return node
 	return _get_max_value_node(node.right)
 
-# Public remove function
-func remove(data, directrix_y) -> void:
-	print("mau remove " + str(data))
-	#root = _remove(root, data, directrix_y)
 	
 func remove2(left_focus:Vector2, middle_node:AVLNode, right_focus:Vector2, priority, intersection_point:Vector2):
 	
@@ -651,10 +532,7 @@ func remove2(left_focus:Vector2, middle_node:AVLNode, right_focus:Vector2, prior
 			if middle_node.parent != null: middle_node.parent.left = a
 			
 		else:
-			print('circle event not valid anymore?')
 			assert(false, "this should never happen")
-	else:
-		print('circle event not valid anymore?')
 
 func get_right_breakpoint(node:AVLNode, directrix_y):
 	if node.next != null:

@@ -45,7 +45,7 @@ func _draw() -> void:
 		pass
 	
 	
-	print(draw_edges)
+	#print(draw_edges)
 		
 
 func _process(_delta) -> void:
@@ -143,7 +143,6 @@ func add_circle_event(y_sweepline, middle_arc:AVLNode, intersection_point:Vector
 	min_heap.insert(circle_event)
 
 func add_edge(from:Vector2, to:Vector2):
-	#print("GAMBAR EDGEE")
 	draw_edges.append([from, to])
 	queue_redraw()
 
