@@ -50,16 +50,14 @@ func _draw() -> void:
 		pass
 		
 	if len(draw_circles) > 0:
-		var best_circle = draw_circles[0]
+		var max_radius = draw_circles[0][1]
 		for c in draw_circles:
-			if c[1] > best_circle[1]:
-				best_circle = c
-		draw_circle(best_circle[0], best_circle[1], circle_event_color, false, line_width, true)
+			if c[1] > max_radius:
+				max_radius = c[1]
+		for c in draw_circles:
+			if c[1] == max_radius:
+				draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
 		
-	#for c in draw_circles:
-		#draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
-	
-	
 	#print(draw_edges)
 		
 
