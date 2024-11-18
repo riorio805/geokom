@@ -577,7 +577,7 @@ func _remove_this_node(node:AVLNode, voronoi_vertex:Vector2):
 		var removed_node = node
 		var tmp := _get_min_value_node(node.right)
 		
-		# detach from old parent
+		
 		tmp.is_deleted = true
 		
 		# detach from left/right from parent
@@ -599,33 +599,14 @@ func _remove_this_node(node:AVLNode, voronoi_vertex:Vector2):
 		node.right_edge_start = tmp.right_edge_start
 		node.right_edge_direction = tmp.right_edge_direction
 		
-		# update child
-		#tmp.left = node.left
-		#tmp.right = node.right
-		#tmp.left.parent = tmp
-		#if tmp.right != null: tmp.right.parent = tmp
-		
-		# update parent
-		#tmp.parent = node.parent
-		
-		# update prev (next tidak usah karena yg didelete cuman 1 node)
-		#tmp.prev = node.prev
-		#if tmp.prev != null: tmp.prev.next = tmp
-		
-	
-		
 		# close 2 edge
 		add_edge.emit(removed_node.prev.right_edge_start, voronoi_vertex)
 		add_edge.emit(removed_node.right_edge_start, voronoi_vertex)
 		
-		# update edge kanan
-		#node.right_edge_start = tmp.right_edge_start
-		#node.right_edge_direction = tmp.right_edge_direction
 		
 		# create new edge
 		_make_new_edge(node.prev, voronoi_vertex, voronoi_vertex.y)
 		
-		node = tmp
 		
 		
 	#removed_node.free()
