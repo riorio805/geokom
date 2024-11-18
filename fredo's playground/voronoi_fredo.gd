@@ -11,15 +11,24 @@ var draw_sketch_edges = [] # untuk debug circle event
 const site_event_color = Color.DARK_RED
 const circle_event_color = Color.BLUE
 const voronoi_color = Color.BLACK
-const line_width = 0.5
+const line_width = 10
 
 var min_heap = MinHeap.new()
 
 
 static var MIN_Y = -2000
-static var MAX_Y = 2000
-static var MIN_X = -2000
+static var MAX_Y = 2500
+static var MIN_X = -2500
 static var MAX_X = 2000
+
+var bounding_box:Rect2 = Rect2()
+
+func update_camera(bounds:Rect2):
+	bounding_box = bounds
+	MIN_X = bounding_box.position.x
+	MAX_X = bounding_box.end.x
+	MIN_Y = bounding_box.position.y
+	MAX_Y = bounding_box.end.y
 
 func _draw() -> void:
 	# draw boundary
@@ -31,7 +40,7 @@ func _draw() -> void:
 		#edge[1].y = clamp(edge[1].y, -1000, 5000)
 		
 		#draw_line(edge[0], edge[1], line_color, line_width, true)
-		draw_polyline(edge, voronoi_color, line_width*3, true)
+		draw_polyline(edge, voronoi_color, line_width, true)
 	for edge in draw_sketch_edges:
 		#edge[0].y = clamp(edge[0].y, -1000, 5000)
 		#edge[1].y = clamp(edge[1].y, -1000, 5000)
@@ -40,9 +49,15 @@ func _draw() -> void:
 		#draw_polyline(edge, circle_event_color, line_width, true)
 		pass
 		
-	for c in draw_circles:
+	if len(draw_circles) > 0:
+		var best_circle = draw_circles[0]
+		for c in draw_circles:
+			if c[1] > best_circle[1]:
+				best_circle = c
+		draw_circle(best_circle[0], best_circle[1], circle_event_color, false, line_width, true)
+		
+	#for c in draw_circles:
 		#draw_circle(c[0], c[1], circle_event_color, false, line_width, true)
-		pass
 	
 	
 	#print(draw_edges)
@@ -121,7 +136,7 @@ func update_with_points(nodes:Array):
 				start.x += (start.y-MIN_Y) / tan(dir)
 				start.y = MIN_Y
 			
-			add_edge(start, start + 1000 * Vector2(cos(dir), -sin(dir)))
+			add_edge(start, start + 10000 * Vector2(cos(dir), -sin(dir)))
 			tmp = tmp.next
 	
 	#beachlines.free()

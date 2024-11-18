@@ -40,11 +40,6 @@ func _rotate_right(y: AVLNode) -> AVLNode:
 	return x
 
 func _rotate_left(x: AVLNode) -> AVLNode:
-		 #x
-	   #/   \
-			 #y
-		   #/  
-		  #t2 
 	var y = x.right
 	var t2 = y.left
 
@@ -58,7 +53,6 @@ func _rotate_left(x: AVLNode) -> AVLNode:
 	if t2 != null:
 		t2.parent = x
 	
-
 	# Update heights
 	_update_height(x)
 	_update_height(y)
@@ -138,8 +132,8 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.arc_focus), node, voronoi_vertex)
 			#add_circle.emit(voronoi_vertex, 10)
 			#node.next.ends_in_directrix = voronoi_vertex.y
-			add_circle.emit(voronoi_vertex, 10)
-			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+			#add_circle.emit(voronoi_vertex, 10)
+			#add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 			
 	
 	if node.next.next != null:
@@ -148,8 +142,8 @@ func _make_new_edge(node: AVLNode, start_point:Vector2, directrix_y) -> void:
 		if voronoi_vertex != null:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), node.next, voronoi_vertex)
 			#add_circle.emit(voronoi_vertex, 8)
-			add_circle.emit(voronoi_vertex, 10)
-			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+			#add_circle.emit(voronoi_vertex, 10)
+			#add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
 # memeriksa edge kiri & kanan apakah berhimpit dengan sampingnya
 func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> void:
@@ -162,8 +156,8 @@ func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> vo
 		if voronoi_vertex != null:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.arc_focus), node, voronoi_vertex)
 			#node.next.ends_in_directrix = voronoi_vertex.y
-			add_circle.emit(voronoi_vertex, 10)
-			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+			#add_circle.emit(voronoi_vertex, 10)
+			#add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
 	# check edge tepat kiri dengan kirinya lagi
 	if node.prev != null && node.prev.prev != null:
@@ -172,8 +166,8 @@ func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> vo
 		if voronoi_vertex != null:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.prev.arc_focus), node.prev, voronoi_vertex)
 			#node.next.ends_in_directrix = voronoi_vertex.y
-			add_circle.emit(voronoi_vertex, 10)
-			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+			#add_circle.emit(voronoi_vertex, 10)
+			#add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
 	# check edge tepat kanan dengan kanannya lagi
 	if node.next != null && node.next.next != null:
@@ -182,8 +176,8 @@ func _check_circle_event_on_newly_inserted_arc(node: AVLNode, directrix_y) -> vo
 		if voronoi_vertex != null:
 			add_circle_event.emit(voronoi_vertex.y + voronoi_vertex.distance_to(node.next.arc_focus), node.next, voronoi_vertex)
 			#node.prev.ends_in_directrix = voronoi_vertex.y
-			add_circle.emit(voronoi_vertex, 10)
-			add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
+			#add_circle.emit(voronoi_vertex, 10)
+			#add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
 func _insert_di_paling(node: AVLNode, data: Vector2, directrix_y, is_paling_kiri: bool) -> AVLNode:
 	if node == null:
@@ -496,6 +490,9 @@ func _remove_this_node(node:AVLNode, voronoi_vertex:Vector2):
 	
 	assert(node.prev != null)
 	assert(node.next != null)
+	
+	add_circle.emit(voronoi_vertex, 10)
+	add_circle.emit(voronoi_vertex, voronoi_vertex.distance_to(node.arc_focus))
 	
 	#print("deleting arc", node.arc_focus)
 	if node.left == null:
