@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3 uid="uid://b8p2jli64pxs0"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_0b3sm"]
+[ext_resource type="PackedScene" uid="uid://bppbm3gee4xef" path="res://fredo's playground/voronoi_fredo.tscn" id="2_ssvg6"]
+[ext_resource type="PackedScene" uid="uid://53jcmh16ml7c" path="res://objects/dots.tscn" id="3_nbr13"]
+[ext_resource type="Script" path="res://camera.gd" id="4_xrnfc"]
+
+[node name="Fredo" type="Node2D" node_paths=PackedStringArray("dots_node", "draw_node")]
+script = ExtResource("1_0b3sm")
+dots_node = NodePath("Dots")
+draw_node = NodePath("VoronoiFredo")
+
+[node name="VoronoiFredo" parent="." instance=ExtResource("2_ssvg6")]
+
+[node name="Dots" parent="." instance=ExtResource("3_nbr13")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("4_xrnfc")
+
+[node name="GUI" type="CanvasLayer" parent="."]
+
+[node name="ImportPoints" type="Button" parent="GUI"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 124.0
+offset_bottom = 41.0
+text = "Import points"
+
+[node name="FileDialog" type="FileDialog" parent="GUI/ImportPoints"]
+auto_translate_mode = 1
+title = "Open a File"
+size = Vector2i(303, 180)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.txt;Text Files", "*.*;Any")
+use_native_dialog = true
+
+[connection signal="pressed" from="GUI/ImportPoints" to="." method="_on_import_points_pressed"]

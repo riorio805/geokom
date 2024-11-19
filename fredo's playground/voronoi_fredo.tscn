@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bppbm3gee4xef"]
+
+[ext_resource type="Script" path="res://fredo's playground/voronoi_fredo.gd" id="1_brgi7"]
+
+[node name="VoronoiFredo" type="Node2D"]
+script = ExtResource("1_brgi7")

@@ -1,7 +1,8 @@
 [gd_scene load_steps=2 format=3 uid="uid://bopge1tkhmyiu"]
 
-[ext_resource type="Texture2D" uid="uid://bqlw5q8xva8pn" path="res://icon.svg" id="1_xtpy3"]
+[ext_resource type="Texture2D" uid="uid://d0pk3gvwvr1lv" path="res://objects/dot.png" id="1_vv6sy"]
 
 [node name="dot" type="Sprite2D"]
-scale = Vector2(0.25, 0.25)
-texture = ExtResource("1_xtpy3")
+modulate = Color(0.794318, 0.245808, 0.0624468, 1)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("1_vv6sy")
