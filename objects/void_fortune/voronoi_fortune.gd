@@ -73,8 +73,7 @@ func update_with_points(nodes:Array):
 		#print(root_arc)
 	
 	
-	# TODO: Change infinite edge handling to extend only (dont use beachline at directrix l_y)
-	# handle infinite edges
+	# handle infinite edges by extending using bisector
 	var curr = root_arc
 	while curr.prev != null: curr = curr.prev
 	
