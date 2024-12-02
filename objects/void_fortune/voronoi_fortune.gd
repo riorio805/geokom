@@ -2,7 +2,7 @@ extends Node2D
 
 const REALLY_HIGH = 1e4
 const REALLY_LOW = -1e5
-const HALF_EDGE_DIST = 1e7
+const HALF_EDGE_DIST = 1e6
 
 var bounding_box:Rect2 = Rect2()
 
@@ -47,6 +47,7 @@ func update_with_points(nodes:Array):
 	#var first_vertex = Vertex.create_vertex_auto_face(points[0] + Vector2(0, REALLY_HIGH))
 	# into vertice with face
 	var vertices = points.map(func (p): return Vertex.create_vertex_auto_face(p))
+	print("Points:", vertices)
 	# create event queue initialize with site events
 	var event_queue = PriorityQueue.create_pq(
 		vertices.map(func(p): return SiteEvent.create_site_event(p)),
@@ -54,13 +55,14 @@ func update_with_points(nodes:Array):
 	)
 	
 	var first:SiteEvent = event_queue.remove()
+	print("first site event: ", first)
 	var root_arc = ArcTreeNode.create_node(first.vertex)
 	root_arc.event_queue = event_queue
 	
 	# main loop
 	var last_ly = 0
 	while not event_queue.is_empty():
-		print(event_queue)
+		#print(event_queue)
 		var nxt_event = event_queue.remove()
 		last_ly = nxt_event.y + REALLY_LOW
 		if nxt_event is SiteEvent:
@@ -68,7 +70,7 @@ func update_with_points(nodes:Array):
 		elif nxt_event is CircleEvent:
 			if nxt_event.is_valid():
 				root_arc = ArcTreeNode.delete_arc(nxt_event.arc, nxt_event.y)
-		print(root_arc)
+		#print(root_arc)
 	
 	
 	# TODO: Change infinite edge handling to extend only (dont use beachline at directrix l_y)
@@ -76,12 +78,29 @@ func update_with_points(nodes:Array):
 	var curr = root_arc
 	while curr.prev != null: curr = curr.prev
 	
-	while curr.next != null:
-		var bounds = curr.get_bounds(last_ly)
+	while curr != null:
+		#print("Fix node: ", curr._get_info())
+		
 		if curr.left_hedge != null:
-			curr.left_hedge.start = Vertex.create_vertex(bounds[0], curr.vertex.face)
+			#print("Input edge: prev=", curr.left_hedge)
+			var direction = curr.prev.vertex.get_bisector(curr.vertex)[1]
+			curr.left_hedge.start = Vertex.create_vertex(
+				curr.left_hedge.end.point + direction * HALF_EDGE_DIST,
+				curr.vertex.face)
+			
+			#print("	new=", curr.left_hedge)
+			curr.vertex.face.edge_list.append(curr.left_hedge)
+		
 		if curr.right_hedge != null:
-			curr.right_hedge.end = Vertex.create_vertex(bounds[1], curr.vertex.face)
+			#print("Input edge: prev=", curr.right_hedge)
+			var direction = curr.vertex.get_bisector(curr.next.vertex)[1]
+			
+			curr.right_hedge.end = Vertex.create_vertex(
+				curr.right_hedge.start.point + direction * HALF_EDGE_DIST,
+				curr.vertex.face)
+			
+			#print("	new=", curr.right_hedge)
+			curr.vertex.face.edge_list.append(curr.right_hedge)
 		curr = curr.next
 	
 	draw_faces = []

@@ -16,6 +16,14 @@ func initialize(start_point:Vertex, end_point:Vertex, edge_face:Face):
 	self.face = edge_face
 	return self
 
+func remove_all_references():
+	self.start = null
+	self.end = null
+	self.face = null
+	self.twin = null
+	self.next = null
+	self.prev = null
+
 static func create_dcedge(start_point:Vertex=null, end_point:Vertex=null, edge_face:Face=null) -> DCEdge:
 	var out = DCEdge.new()
 	out.start = start_point

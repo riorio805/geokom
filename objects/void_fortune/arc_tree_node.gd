@@ -3,7 +3,7 @@
 extends Resource
 class_name ArcTreeNode
 
-const HALF_EDGE_DIST = 1e5
+const HALF_EDGE_DIST = 1e6
 const MACHINE_EPS = 1e-5
 
 # Relations to other arcs
@@ -70,7 +70,7 @@ static func get_breakpoint(left_vertex:Vertex, right_vertex:Vertex, l_y:float) -
 	
 	# Special case for y1 == 0 or y2 == 0, return vertical distance
 	# never the case that both y1 == y2 == 0, only happens when first starting
-	print(y1, "; ", y2)
+	#print(y1, "; ", y2)
 	if (y1 < MACHINE_EPS and y2 < MACHINE_EPS):
 		print("Handle both points  close to the directrix (v1={0}, v2={1})".format([left_vertex, right_vertex]))
 		return left_vertex.get_bisector(right_vertex)[0]
@@ -171,14 +171,18 @@ func _get_string(indent:String, h:int=0) -> String:
 		out += self.right._get_string("R----", h + 1)
 	out += ("	".repeat(h)
 			+ indent
-			+ str(self.vertex)
-			+ " | L:" + str(self.left_hedge)
-			+ " | R:" + str(self.right_hedge)
-			+ " // "
-			+ str(self.height)) + "\n"
+			+ self._get_info()
+			+ "\n")
 	if self.left != null:
 		out += self.left._get_string("L----", h + 1)
 	return out
+func _get_info() -> String:
+	return (str(self.vertex)
+			+ " | L:" + str(self.left_hedge)
+			+ " | R:" + str(self.right_hedge)
+			+ " // "
+			+ str(self.height))
+
 
 ## Finds the beach line arc with sweep line = l_y corresponding to the x value
 func find (x: float, l_y:float) -> ArcTreeNode:
@@ -207,6 +211,7 @@ func replace_child(from:ArcTreeNode, to:ArcTreeNode):
 
 ## Special case when 2 points with really high point
 func add_arc(focus:Vertex) -> ArcTreeNode:
+	print("in add_arc::", self.vertex, " with focus: ", focus)
 	var diff = focus.point.x - self.vertex.point.x
 	# found arc, create new arc
 	var new_arc = ArcTreeNode.create_node(focus)
@@ -216,32 +221,18 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 	if diff > 0:
 		# Get edge limit through bisector
 		var bisector = focus.vertex.get_bisector(self)
+		print(bisector)
 		bisector[1] *= HALF_EDGE_DIST
 		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
 		# Create edges 
 		var edge_to_vtx_right = DCEdge.create_dcedge(end_vertex, null, self.vertex.face)
 		var edge_from_fcs_left = DCEdge.create_dcedge(null, end_vertex, new_arc.vertex.face)
-		# add edges to vertex faces
-		self.vertex.face.edge_list.append(edge_to_vtx_right)
-		new_arc.vertex.face.edge_list.append(edge_from_fcs_left)
+		edge_to_vtx_right.twin = edge_from_fcs_left
+		edge_from_fcs_left.twin = edge_to_vtx_right
 		
-		# then attach them to the arc edges (if already has, remove edge then attach new ones)
-		if self.next != null:
-			new_arc
-		#left_arc.left_hedge = self.left_hedge
-		#right_arc.right_hedge = self.right_hedge
-		#self.left_hedge = edge_btm_left_vtx
-		#self.right_hedge = edge_btm_vtx_right
-		#left_arc.right_hedge = edge_top_vtx_right
-		#right_arc.left_hedge = edge_top_left_vtx
-		
-		# Check for arc triples that can cause an arc to disappear,
-		if self.get_focus_angle() < -MACHINE_EPS:
-			var circle = Circle.create_from_3_points(
-				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
-			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-				self, self.vertex)
-			event_queue.add(event)
+		# then attach them to the arc edges
+		self.right_hedge = edge_to_vtx_right
+		new_arc.left_hedge = edge_from_fcs_left
 		
 		# Do the same to other side of focus if self.next exists
 		if self.next != null:
@@ -253,34 +244,47 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 			# Create edges 
 			var edge_from_vtx_left = DCEdge.create_dcedge(null, end_vertex2, snext.vertex.face)
 			var edge_to_fcs_right = DCEdge.create_dcedge(end_vertex2, null, new_arc.vertex.face)
-			# add edges to vertex faces
-			snext.vertex.face.edge_list.append(edge_from_vtx_left)
-			new_arc.vertex.face.edge_list.append(edge_to_fcs_right)
-			
-			# Check for arc triples that can cause an arc to disappear,
-			if new_arc.get_focus_angle() < -MACHINE_EPS:
-				var circle = Circle.create_from_3_points(
-					new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
-				var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-					new_arc, new_arc.vertex)
-				event_queue.add(event)
+			edge_from_vtx_left.twin = edge_to_fcs_right
+			edge_to_fcs_right.twin = edge_from_vtx_left
+			# then attach them to the arc edges
+			snext.left_hedge = edge_from_vtx_left
+			new_arc.right_hedge = edge_to_fcs_right
+			pass
 		
 		# Add to tree
 		if self.right == null:	 self.add_rightmost(new_arc)
 		else:		self.right = self.right.add_leftmost(new_arc)
 		
+		# Check for arc triples that can cause an arc to disappear,
+		if self.get_focus_angle() < -MACHINE_EPS:
+			var circle = Circle.create_from_3_points(
+				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
+			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+				self, self.vertex)
+			event_queue.add(event)
+		if new_arc.get_focus_angle() < -MACHINE_EPS:
+			var circle = Circle.create_from_3_points(
+				new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
+			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+				new_arc, new_arc.vertex)
+			event_queue.add(event)
+		
 	# focus to the left
 	else:
 		# Get edge limit through bisector
 		var bisector = self.vertex.get_bisector(focus)
+		print(bisector)
 		bisector[1] *= HALF_EDGE_DIST
 		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
 		# Create edges 
 		var edge_from_vtx_left = DCEdge.create_dcedge(null, end_vertex, self.vertex.face)
 		var edge_to_fcs_right = DCEdge.create_dcedge(end_vertex, null, new_arc.vertex.face)
-		# add edges to vertex faces
-		self.vertex.face.edge_list.append(edge_from_vtx_left)
-		new_arc.vertex.face.edge_list.append(edge_to_fcs_right)
+		edge_from_vtx_left.twin = edge_to_fcs_right
+		edge_to_fcs_right.twin = edge_from_vtx_left
+		
+		# then attach them to the arc edges
+		self.left_hedge = edge_from_vtx_left
+		new_arc.right_hedge = edge_to_fcs_right
 		
 		# Check for arc triples that can cause an arc to disappear,
 		if self.get_focus_angle() < -MACHINE_EPS:
@@ -300,21 +304,31 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 			# Create edges 
 			var edge_to_vtx_right = DCEdge.create_dcedge(end_vertex2, null, sprev.vertex.face)
 			var edge_from_fcs_left = DCEdge.create_dcedge(null, end_vertex2, new_arc.vertex.face)
-			# add edges to vertex faces
-			sprev.vertex.face.edge_list.append(edge_to_vtx_right)
-			new_arc.vertex.face.edge_list.append(edge_from_fcs_left)
+			edge_to_vtx_right.twin = edge_from_fcs_left
+			edge_from_fcs_left.twin = edge_to_vtx_right
 			
-			# Check for arc triples that can cause an arc to disappear,
-			if new_arc.get_focus_angle() < -MACHINE_EPS:
-				var circle = Circle.create_from_3_points(
-					new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
-				var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-					new_arc, new_arc.vertex)
-				event_queue.add(event)
+			# then attach them to the arc edges
+			sprev.right_hedge = edge_to_vtx_right
+			new_arc.left_hedge = edge_from_fcs_left
+			pass
 		
 		# Add to tree
-		if self.right == null:	 self.add_rightmost(new_arc)
-		else:		self.right = self.right.add_leftmost(new_arc)
+		if self.left == null:	 self.add_leftmost(new_arc)
+		else:		self.left = self.left.add_rightmost(new_arc)
+		
+		# Check for arc triples that can cause an arc to disappear,
+		if self.get_focus_angle() < -MACHINE_EPS:
+			var circle = Circle.create_from_3_points(
+				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
+			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+				self, self.vertex)
+			event_queue.add(event)
+		if new_arc.get_focus_angle() < -MACHINE_EPS:
+			var circle = Circle.create_from_3_points(
+				new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
+			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
+				new_arc, new_arc.vertex)
+			event_queue.add(event)
 	
 	
 	return self._balance()
@@ -374,11 +388,7 @@ func split_arc(focus:Vertex) -> ArcTreeNode:
 	var edge_top_left_vtx = DCEdge.create_dcedge(null, edge_start, old_vert.face)
 	var edge_btm_vtx_right = DCEdge.create_dcedge(edge_start, null, focus.face)
 	var edge_btm_left_vtx = DCEdge.create_dcedge(null, edge_start, focus.face)
-	# add edges to vertex faces
-	old_vert.face.edge_list.append(edge_top_vtx_right)
-	old_vert.face.edge_list.append(edge_top_left_vtx)
-	focus.face.edge_list.append(edge_btm_vtx_right)
-	focus.face.edge_list.append(edge_btm_left_vtx)
+	# set edges relationship
 	edge_top_vtx_right.set_edge_connection(null, edge_top_left_vtx, edge_btm_left_vtx)
 	edge_top_left_vtx.set_edge_connection(edge_top_vtx_right, null, edge_btm_vtx_right)
 	edge_btm_left_vtx.set_edge_connection(edge_btm_vtx_right, null, edge_top_vtx_right)
@@ -455,18 +465,24 @@ static func delete_arc(to_delete:ArcTreeNode, l_y:float) -> ArcTreeNode:
 	# handle edges first
 	var end_pos = Vertex.create_vertex(to_delete.get_bounds(l_y)[0])
 	#print(end_pos)
+	# complete the half edges
 	to_delete.left_hedge.start = end_pos
 	to_delete.right_hedge.end = end_pos
 	to_delete.left_hedge.twin.end = end_pos
 	to_delete.right_hedge.twin.start = end_pos
 	to_delete.left_hedge.prev = to_delete.right_hedge
 	to_delete.right_hedge.next = to_delete.left_hedge
+	# add previous complete edges to vertex faces
+	to_delete.vertex.face.edge_list.append(to_delete.left_hedge)
+	to_delete.vertex.face.edge_list.append(to_delete.right_hedge)
+	to_delete.prev.vertex.face.edge_list.append(to_delete.left_hedge.twin)
+	to_delete.next.vertex.face.edge_list.append(to_delete.right_hedge.twin)
 	
 	# create new edges to put to prev.r and next.l
 	var edge_to_prev_right = DCEdge.create_dcedge(end_pos, null, to_delete.prev.vertex.face)
 	var edge_to_next_left = DCEdge.create_dcedge(null, end_pos, to_delete.next.vertex.face)
-	to_delete.prev.vertex.face.edge_list.append(edge_to_prev_right)
-	to_delete.next.vertex.face.edge_list.append(edge_to_next_left)
+	#to_delete.prev.vertex.face.edge_list.append(edge_to_prev_right)
+	#to_delete.next.vertex.face.edge_list.append(edge_to_next_left)
 	edge_to_prev_right.set_edge_connection(null, to_delete.prev.right_hedge, edge_to_next_left)
 	edge_to_next_left.set_edge_connection(to_delete.next.left_hedge, null, edge_to_prev_right)
 	to_delete.prev.right_hedge.next = edge_to_prev_right

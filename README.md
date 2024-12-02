@@ -15,4 +15,3 @@ Controls:
 
 
 Github repository: [https://github.com/riorio805/geokom](https://github.com/riorio805/geokom)
-(might still be private)

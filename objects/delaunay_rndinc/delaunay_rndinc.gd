@@ -58,8 +58,8 @@ func update_with_points(nodes:Array):
 			root_tri.split_at(vtx)
 	
 	draw_triangles = root_tri.get_all_leaf_tris()
-	print("depth: ", root_tri.get_tree_depth())
-	print("points: ", len(vertices))
+	#print("depth: ", root_tri.get_tree_depth())
+	#print("points: ", len(vertices))
 	#print(draw_triangles)
 	DTriangle.free_all_non_leaf(root_tri)
 	queue_redraw()

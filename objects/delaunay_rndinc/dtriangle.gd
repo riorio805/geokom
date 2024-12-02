@@ -45,7 +45,7 @@ static func init() -> DTriangle:
 static func free_all_non_leaf(tri:DTriangle):
 	var to_delete:Array[DTriangle] = [tri]
 	while not to_delete.is_empty():
-		var nxt = to_delete.pop_front()
+		var nxt = to_delete.pop_back()
 		if len(nxt.child_tris) == 0:
 			continue
 		else:
@@ -71,12 +71,13 @@ func get_all_leaf_tris() -> Array[DTriangle]:
 	var out_tris = Dictionary()
 	var tris:Array[DTriangle] = [self]
 	while not tris.is_empty():
-		var nxt_tri:DTriangle = tris.pop_front()
+		var nxt_tri:DTriangle = tris.pop_back()
 		if len(nxt_tri.child_tris) == 0:
 			out_tris.get_or_add(nxt_tri, null)
 		else:
 			for e in nxt_tri.child_tris:
 				tris.append(e)
+	
 	var out:Array[DTriangle] = []
 	for e in out_tris.keys():
 		out.append(e)

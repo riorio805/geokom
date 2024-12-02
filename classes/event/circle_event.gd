@@ -16,7 +16,7 @@ func value():
 	return [-y, 1, -self.vertex.point.x]
 
 func is_valid() -> bool:
-	return (not arc.is_deleted and arc.vertex == vertex)
+	return (not arc.is_deleted and arc.vertex == vertex and arc.prev != null and arc.next != null)
 
 func _to_string():
 	return "CircleEvent:: {0}, y={1} ".format([self.arc.vertex, self.y])
