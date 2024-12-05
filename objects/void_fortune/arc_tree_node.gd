@@ -221,7 +221,7 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 	# focus to the right
 	if diff > 0:
 		# Get edge limit through bisector
-		var bisector = focus.vertex.get_bisector(self)
+		var bisector = focus.get_bisector(self.vertex)
 		#print(bisector)
 		bisector[1] *= HALF_EDGE_DIST
 		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
