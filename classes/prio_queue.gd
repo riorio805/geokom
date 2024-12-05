@@ -22,7 +22,10 @@ func add(value):
 	percolate_up(len(pq)-1)
 
 func peek():
-	return pq[0]
+	if len(pq) > 0:
+		return pq[0]
+	else:
+		return null
 
 func remove():
 	var out = pq[0]

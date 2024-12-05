@@ -1,8 +1,9 @@
 extends Node
 
 func _ready() -> void:
-	#var v1 = Vertex.create_vertex_auto_face(Vector2(3,16))
-	#var v2 = Vertex.create_vertex_auto_face(Vector2(15,9))
+	# var v1 = Vertex.create_vertex_auto_face(Vector2(-3,-16))
+	# var v2 = Vertex.create_vertex_auto_face(Vector2(15,9))
+	# print(v1.get_bisector(v2))
 	#var v3 = Vertex.create_vertex_auto_face(Vector2(7,7))
 	#
 	#var root = ArcTreeNode.create_node(v1)
