@@ -13,6 +13,7 @@ var right:ArcTreeNode
 # Focus of arc
 var vertex:Vertex
 # Extra arc references to help arc bounds calculations (breakpoints)
+# and to help deletion
 var prev:ArcTreeNode
 var next:ArcTreeNode
 # Half-edges associated with this arc
@@ -55,7 +56,7 @@ func is_leaf():
 	return self.left == null and self.right == null
 
 
-## Get the breakpoint between both parabola (from the vertices) with the directrix = l_y.
+## Get the breakpoint between two parabola (from the vertices) with the directrix = l_y.
 ## Always returns the breakpoint where the left arc corresponds with the left vertex, and right arc with the right vertex.
 ## Throws an assertion error if both points are close to the directrix, or below.
 static func get_breakpoint(left_vertex:Vertex, right_vertex:Vertex, l_y:float) -> Vector2:
@@ -209,7 +210,7 @@ func replace_child(from:ArcTreeNode, to:ArcTreeNode):
 # Add/split arcs
 # ==================
 
-## Special case when 2 points with really high point
+## Special case when point intersects the beachline really high up, just use a point on the bisector(s) as the intersect point
 func add_arc(focus:Vertex) -> ArcTreeNode:
 	#print("in add_arc::", self.vertex, " with focus: ", focus)
 	var diff = focus.point.x - self.vertex.point.x
@@ -260,13 +261,13 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 			var circle = Circle.create_from_3_points(
 				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
 			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-				self, self.vertex)
+				self, self.vertex, circle)
 			event_queue.add(event)
 		if new_arc.get_focus_angle() < -MACHINE_EPS:
 			var circle = Circle.create_from_3_points(
 				new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
 			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-				new_arc, new_arc.vertex)
+				new_arc, new_arc.vertex, circle)
 			event_queue.add(event)
 		
 	# focus to the left
@@ -291,7 +292,7 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 			var circle = Circle.create_from_3_points(
 				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
 			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-				self, self.vertex)
+				self, self.vertex, circle)
 			event_queue.add(event)
 		
 		# Do the same to other side of focus if self.prev exists
@@ -321,13 +322,13 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 			var circle = Circle.create_from_3_points(
 				self.prev.vertex.point, self.vertex.point, self.next.vertex.point)
 			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-				self, self.vertex)
+				self, self.vertex, circle)
 			event_queue.add(event)
 		if new_arc.get_focus_angle() < -MACHINE_EPS:
 			var circle = Circle.create_from_3_points(
 				new_arc.prev.vertex.point, new_arc.vertex.point, new_arc.next.vertex.point)
 			var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-				new_arc, new_arc.vertex)
+				new_arc, new_arc.vertex, circle)
 			event_queue.add(event)
 	
 	
@@ -410,7 +411,7 @@ func split_arc(focus:Vertex) -> ArcTreeNode:
 		var circle = Circle.create_from_3_points(
 			left_arc.prev.vertex.point, left_arc.vertex.point, left_arc.next.vertex.point)
 		var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-			left_arc, left_arc.vertex)
+			left_arc, left_arc.vertex, circle)
 		#print(str(left_arc.vertex), ":: arc circle event at circle=", circle, ", y=", event.y)
 		event_queue.add(event)
 	#print("Right arc angle is ", right_arc.get_focus_angle())
@@ -418,7 +419,7 @@ func split_arc(focus:Vertex) -> ArcTreeNode:
 		var circle = Circle.create_from_3_points(
 			right_arc.prev.vertex.point, right_arc.vertex.point, right_arc.next.vertex.point)
 		var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-			right_arc, right_arc.vertex)
+			right_arc, right_arc.vertex, circle)
 		#print(str(right_arc.vertex), ":: arc circle event at circle=", circle, ", y=", event.y)
 		event_queue.add(event)
 	
@@ -549,13 +550,13 @@ static func delete_arc(to_delete:ArcTreeNode, l_y:float) -> ArcTreeNode:
 		var circle = Circle.create_from_3_points(
 			check_prev.prev.vertex.point, check_prev.vertex.point, check_prev.next.vertex.point)
 		var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-					check_prev, check_prev.vertex)
+					check_prev, check_prev.vertex, circle)
 		to_delete.event_queue.add(event)
 	if check_next != null and check_next.get_focus_angle() < -MACHINE_EPS:
 		var circle = Circle.create_from_3_points(
 			check_next.prev.vertex.point, check_next.vertex.point, check_next.next.vertex.point)
 		var event = CircleEvent.create_circle_event(circle.center.y - circle.radius,
-					check_next, check_next.vertex)
+					check_next, check_next.vertex, circle)
 		to_delete.event_queue.add(event)
 	
 	# "delete" the arc

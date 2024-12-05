@@ -4,12 +4,14 @@ class_name CircleEvent
 #var y:float
 var arc:ArcTreeNode
 var vertex: Vertex
+var circle:Circle
 
-static func create_circle_event(y_val:float, a:ArcTreeNode, vtx:Vertex) -> CircleEvent:
+static func create_circle_event(y_val:float, a:ArcTreeNode, vtx:Vertex, o:Circle) -> CircleEvent:
 	var out = CircleEvent.new()
 	out.y = y_val
 	out.arc = a
 	out.vertex = vtx
+	out.circle = o
 	return out
 
 func value():

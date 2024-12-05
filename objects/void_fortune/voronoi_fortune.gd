@@ -1,14 +1,15 @@
 extends Node2D
 
 const REALLY_HIGH = 1e4
-const REALLY_LOW = -1e5
 const HALF_EDGE_DIST = 1e6
 
 var bounding_box:Rect2 = Rect2()
 
 var draw_faces:Array[Face] = []
+var draw_circles:Array[Circle] = []
 
 var color = Color.BLACK
+const circle_event_color = Color.BLUE
 var line_width = 5
 
 func _draw() -> void:
@@ -16,7 +17,10 @@ func _draw() -> void:
 		#print(face.edge_list)
 		for edge in face.edge_list:
 			if edge.start != null and edge.end != null:
-				draw_line(edge.start.point, edge.end.point, color, line_width)
+				draw_line(edge.start.point, edge.end.point, color, line_width, true)
+	
+	for circle in draw_circles:
+		draw_circle(circle.center, circle.radius, circle_event_color, false, line_width, true)
 
 func _process(_delta) -> void:
 	if Input.is_action_just_pressed("debug"):
@@ -31,8 +35,8 @@ func update_with_points(nodes:Array):
 	if len(nodes) == 0:
 		return
 	
-	print("=============================")
-	print("=========== update ==========")
+	#print("=============================")
+	#print("=========== update ==========")
 	var points = nodes.map(func (p): return p.position)
 	# remove duplicate points
 	points = _array_unique(points)
@@ -42,10 +46,7 @@ func update_with_points(nodes:Array):
 		if a.y < b.y: return false
 		return a.x > b.x
 	)
-	print(points)
-	# add a point really high up to handle 2 points near the top
-	#var first_vertex = Vertex.create_vertex_auto_face(points[0] + Vector2(0, REALLY_HIGH))
-	# into vertice with face
+	#print(points)
 	var vertices = points.map(func (p): return Vertex.create_vertex_auto_face(p))
 	#print("Points:", vertices)
 	# create event queue initialize with site events
@@ -62,6 +63,7 @@ func update_with_points(nodes:Array):
 	# main loop
 	#print(root_arc)
 	#print(event_queue.peek())
+	var circles:Array[Circle] = []
 	while not event_queue.is_empty():
 		var nxt_event = event_queue.remove()
 		if nxt_event is SiteEvent:
@@ -70,6 +72,8 @@ func update_with_points(nodes:Array):
 			#print(event_queue.peek())
 		elif nxt_event is CircleEvent:
 			if nxt_event.is_valid():
+				# Add circle corresponding to this event to the circles
+				circles.append(nxt_event.circle)
 				root_arc = ArcTreeNode.delete_arc(nxt_event.arc, nxt_event.y)
 				#print(root_arc)
 				#print(event_queue.peek())
@@ -104,10 +108,22 @@ func update_with_points(nodes:Array):
 			curr.vertex.face.edge_list.append(curr.right_hedge)
 		curr = curr.next
 	
+	# get faces
 	draw_faces = []
 	for vtx in vertices:
 		draw_faces.append(vtx.face)
 		pass
+	
+	# get circles
+	draw_circles = []
+	if len(circles) > 0:
+		var max_radius = -1
+		for c in circles:
+			if c.radius > max_radius:
+				max_radius = c.radius
+		for c in circles:
+			if c.radius >= max_radius:
+				draw_circles.append(c)
 	
 	queue_redraw()
 
