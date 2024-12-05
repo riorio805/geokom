@@ -11,8 +11,9 @@ Controls:
 - Right click on a dot/vertex to delete it.
 - Click the `Import Points` button to import points from a text file.
 	- Importing points will clear all points before adding new points from the file.
+- Drag while holding right click on empty space to move the camera (canvas)
+- Use the scroll wheel to zoom in and out
 - Window is resizable
 
 
 Github repository: [https://github.com/riorio805/geokom](https://github.com/riorio805/geokom)
-(might still be private)
