@@ -211,7 +211,7 @@ func replace_child(from:ArcTreeNode, to:ArcTreeNode):
 
 ## Special case when 2 points with really high point
 func add_arc(focus:Vertex) -> ArcTreeNode:
-	print("in add_arc::", self.vertex, " with focus: ", focus)
+	#print("in add_arc::", self.vertex, " with focus: ", focus)
 	var diff = focus.point.x - self.vertex.point.x
 	# found arc, create new arc
 	var new_arc = ArcTreeNode.create_node(focus)
@@ -221,7 +221,7 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 	if diff > 0:
 		# Get edge limit through bisector
 		var bisector = focus.vertex.get_bisector(self)
-		print(bisector)
+		#print(bisector)
 		bisector[1] *= HALF_EDGE_DIST
 		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
 		# Create edges 
@@ -273,7 +273,7 @@ func add_arc(focus:Vertex) -> ArcTreeNode:
 	else:
 		# Get edge limit through bisector
 		var bisector = self.vertex.get_bisector(focus)
-		print(bisector)
+		#print(bisector)
 		bisector[1] *= HALF_EDGE_DIST
 		var end_vertex = Vertex.create_vertex(bisector[0] + bisector[1])
 		# Create edges 
@@ -363,7 +363,7 @@ func split_arc(focus:Vertex) -> ArcTreeNode:
 	# else just add directly to arc
 	var y_at_point = self.get_y_at(focus.point.x, l_y)
 	if y_at_point > self.vertex.point.y + 1e7:
-		print("Go into add_arc")
+		#print("Go into add_arc")
 		return self.add_arc(focus)
 	
 	# found arc, create new arcs as split
@@ -492,17 +492,24 @@ static func delete_arc(to_delete:ArcTreeNode, l_y:float) -> ArcTreeNode:
 	
 	# add arcs that change positions (prev until leaf)
 	var to_change:Array[ArcTreeNode] = [to_delete]
-	while not to_change[-1].is_leaf():
+	while not to_change[-1].is_leaf() and to_change[-1].prev != null:
 		to_change.append(to_change[-1].prev)
-		
+	# if no leaf found go next until leaf instead
+	if not to_change[-1].is_leaf():
+		to_change = [to_delete]
+		while not to_change[-1].is_leaf() and to_change[-1].next != null:
+			to_change.append(to_change[-1].next)
+	
+	
 	to_change.reverse()
 	
 	# keep parent for later check
-	var tmp_par = to_delete.parent
+	var tmp_par = to_change[0].parent
 	
 	# detach first node (leaf) from tree
-	to_change[0].parent.replace_child(to_change[0], null)
-	assert(to_change[0].left == null and to_change[0].right == null, "WHY DO YOU HAVE CHILDREN?????????")
+	tmp_par.replace_child(to_change[0], null)
+	#assert(to_change[0].left == null and to_change[0].right == null, "WHY DO YOU HAVE CHILDREN?????????")
+	tmp_par.update_height()
 	to_change[0].parent = null
 	
 	# reorder tree to remove `to_delete` from tree
@@ -514,14 +521,18 @@ static func delete_arc(to_delete:ArcTreeNode, l_y:float) -> ArcTreeNode:
 		if change_prev.parent != null:
 			change_prev.parent.replace_child(change_next, change_prev)
 		change_next.parent = null
+		
 		change_prev.left = change_next.left
 		if change_prev.left != null:
 			change_prev.left.parent = change_prev
 		change_next.left = null
+		
 		change_prev.right = change_next.right
 		if change_prev.right != null:
 			change_prev.right.parent = change_prev
 		change_next.right = null
+		
+		change_prev.update_height()
 	
 	# remove `to_delete` from "linked list"
 	var check_prev:ArcTreeNode = null
@@ -549,15 +560,20 @@ static func delete_arc(to_delete:ArcTreeNode, l_y:float) -> ArcTreeNode:
 	
 	# "delete" the arc
 	to_delete.remove_all_references()
-	if len(to_change) < 2:
-		if tmp_par.parent == null:
-			return tmp_par._balance()
-		return tmp_par.parent._balance_up(tmp_par)
-	# rebalance up until root node
-	if to_change[-2].parent == null:
-		return to_change[-2]._balance()
+	# balance up until parent
+	if tmp_par == null:
+		return null
+	if tmp_par == to_delete:
+		to_change[0].update_height()
+		if to_change[0].parent == null:
+			return to_change[0]._balance()
+		return to_change[0].parent._balance_up(to_change[0])
 	
-	return to_change[-2].parent._balance_up(to_change[-2])
+	tmp_par.update_height()
+	if tmp_par.parent == null:
+		return tmp_par._balance()
+	return tmp_par.parent._balance_up(tmp_par)
+	
 
 
 # Balance recursively up until root node reached
@@ -596,11 +612,14 @@ func height_difference() -> int:
 
 func _balance() -> ArcTreeNode:
 	# left - right
+	#print(self)
+	self.update_height()
 	var hd = self.height_difference()
 	if hd > 1:
 		hd = self.left.height_difference()
 		if hd >= 0:	return self._single_rotate_right()
 		else:		return self._rotate_LR()
+		#print("changed===\n", self)
 	elif hd < -1:
 		hd = self.right.height_difference()
 		if hd <= 0:	return self._single_rotate_left()
@@ -611,10 +630,14 @@ func _balance() -> ArcTreeNode:
 
 func _single_rotate_left() -> ArcTreeNode:
 	var tmp = self.right
+	if self.parent != null:
+		self.parent.replace_child(self, tmp)
 	tmp.parent = self.parent
+	
 	self.right = tmp.left
 	if self.right != null:
 		self.right.parent = self
+	
 	tmp.left = self
 	self.parent = tmp
 	
@@ -624,10 +647,14 @@ func _single_rotate_left() -> ArcTreeNode:
 
 func _single_rotate_right() -> ArcTreeNode:
 	var tmp = self.left
+	if self.parent != null:
+		self.parent.replace_child(self, tmp)
 	tmp.parent = self.parent
+	
 	self.left = tmp.right
 	if self.left != null:
 		self.left.parent = self
+	
 	tmp.right = self
 	self.parent = tmp
 	

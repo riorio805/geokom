@@ -42,12 +42,12 @@ func update_with_points(nodes:Array):
 		if a.y < b.y: return false
 		return a.x > b.x
 	)
-	#print(points)
+	print(points)
 	# add a point really high up to handle 2 points near the top
 	#var first_vertex = Vertex.create_vertex_auto_face(points[0] + Vector2(0, REALLY_HIGH))
 	# into vertice with face
 	var vertices = points.map(func (p): return Vertex.create_vertex_auto_face(p))
-	print("Points:", vertices)
+	#print("Points:", vertices)
 	# create event queue initialize with site events
 	var event_queue = PriorityQueue.create_pq(
 		vertices.map(func(p): return SiteEvent.create_site_event(p)),
@@ -55,23 +55,25 @@ func update_with_points(nodes:Array):
 	)
 	
 	var first:SiteEvent = event_queue.remove()
-	print("first site event: ", first)
+	#print("first site event: ", first)
 	var root_arc = ArcTreeNode.create_node(first.vertex)
 	root_arc.event_queue = event_queue
 	
 	# main loop
-	var last_ly = 0
+	#print(root_arc)
+	#print(event_queue.peek())
 	while not event_queue.is_empty():
-		#print(event_queue)
 		var nxt_event = event_queue.remove()
-		last_ly = nxt_event.y + REALLY_LOW
 		if nxt_event is SiteEvent:
 			root_arc = root_arc.split_arc(nxt_event.vertex)
+			#print(root_arc)
+			#print(event_queue.peek())
 		elif nxt_event is CircleEvent:
 			if nxt_event.is_valid():
 				root_arc = ArcTreeNode.delete_arc(nxt_event.arc, nxt_event.y)
-		#print(root_arc)
-	
+				#print(root_arc)
+				#print(event_queue.peek())
+	#print(root_arc)
 	
 	# handle infinite edges by extending using bisector
 	var curr = root_arc
