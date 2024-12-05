@@ -1,7 +1,7 @@
 extends Node2D
 
 const REALLY_HIGH = 1e4
-const HALF_EDGE_DIST = 1e6
+const HALF_EDGE_DIST = 2e6
 
 var bounding_box:Rect2 = Rect2()
 
@@ -77,7 +77,7 @@ func update_with_points(nodes:Array):
 				root_arc = ArcTreeNode.delete_arc(nxt_event.arc, nxt_event.y)
 				#print(root_arc)
 				#print(event_queue.peek())
-	#print(root_arc)
+	print(root_arc)
 	
 	# handle infinite edges by extending using bisector
 	var curr = root_arc
@@ -87,7 +87,7 @@ func update_with_points(nodes:Array):
 		#print("Fix node: ", curr._get_info())
 		
 		if curr.left_hedge != null:
-			#print("Input edge: prev=", curr.left_hedge)
+			#print("Input ledge: prev=", curr.left_hedge)
 			var direction = curr.prev.vertex.get_bisector(curr.vertex)[1]
 			curr.left_hedge.start = Vertex.create_vertex(
 				curr.left_hedge.end.point + direction * HALF_EDGE_DIST,
@@ -97,7 +97,7 @@ func update_with_points(nodes:Array):
 			curr.vertex.face.edge_list.append(curr.left_hedge)
 		
 		if curr.right_hedge != null:
-			#print("Input edge: prev=", curr.right_hedge)
+			#print("Input redge: prev=", curr.right_hedge)
 			var direction = curr.vertex.get_bisector(curr.next.vertex)[1]
 			
 			curr.right_hedge.end = Vertex.create_vertex(
@@ -107,6 +107,7 @@ func update_with_points(nodes:Array):
 			#print("	new=", curr.right_hedge)
 			curr.vertex.face.edge_list.append(curr.right_hedge)
 		curr = curr.next
+	
 	
 	# get faces
 	draw_faces = []
