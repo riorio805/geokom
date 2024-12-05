@@ -1,14 +1,15 @@
 extends Node2D
 
 const REALLY_HIGH = 1e4
-const REALLY_LOW = -1e6
-const HALF_EDGE_DIST = 1e7
+const HALF_EDGE_DIST = 1e6
 
 var bounding_box:Rect2 = Rect2()
 
 var draw_faces:Array[Face] = []
+var draw_circles:Array[Circle] = []
 
 var color = Color.BLACK
+const circle_event_color = Color.BLUE
 var line_width = 5
 
 func _draw() -> void:
@@ -16,11 +17,15 @@ func _draw() -> void:
 		#print(face.edge_list)
 		for edge in face.edge_list:
 			if edge.start != null and edge.end != null:
-				draw_line(edge.start.point, edge.end.point, color, line_width)
+				draw_line(edge.start.point, edge.end.point, color, line_width, true)
+	
+	for circle in draw_circles:
+		draw_circle(circle.center, circle.radius, circle_event_color, false, line_width, true)
 
 func _process(_delta) -> void:
 	if Input.is_action_just_pressed("debug"):
 		queue_redraw()
+
 
 func update_camera(bounds:Rect2):
 	bounding_box = bounds
@@ -42,10 +47,8 @@ func update_with_points(nodes:Array):
 		return a.x > b.x
 	)
 	#print(points)
-	# add a point really high up to handle 2 points near the top
-	#var first_vertex = Vertex.create_vertex_auto_face(points[0] + Vector2(0, REALLY_HIGH))
-	# into vertice with face
 	var vertices = points.map(func (p): return Vertex.create_vertex_auto_face(p))
+	#print("Points:", vertices)
 	# create event queue initialize with site events
 	var event_queue = PriorityQueue.create_pq(
 		vertices.map(func(p): return SiteEvent.create_site_event(p)),
@@ -53,43 +56,74 @@ func update_with_points(nodes:Array):
 	)
 	
 	var first:SiteEvent = event_queue.remove()
+	#print("first site event: ", first)
 	var root_arc = ArcTreeNode.create_node(first.vertex)
 	root_arc.event_queue = event_queue
 	
-	# TODO: preprocessing step where you take all points within 1 of root_arc
-	
-	
 	# main loop
-	var last_ly = 0
+	#print(root_arc)
+	#print(event_queue.peek())
+	var circles:Array[Circle] = []
 	while not event_queue.is_empty():
-		#print(event_queue)
 		var nxt_event = event_queue.remove()
-		last_ly = nxt_event.y + REALLY_LOW
 		if nxt_event is SiteEvent:
 			root_arc = root_arc.split_arc(nxt_event.vertex)
+			#print(root_arc)
+			#print(event_queue.peek())
 		elif nxt_event is CircleEvent:
 			if nxt_event.is_valid():
+				# Add circle corresponding to this event to the circles
+				circles.append(nxt_event.circle)
 				root_arc = ArcTreeNode.delete_arc(nxt_event.arc, nxt_event.y)
-		#print(root_arc)
+				#print(root_arc)
+				#print(event_queue.peek())
+	#print(root_arc)
 	
-	
-	# TODO: Change infinite edge handling to extend only (dont use beachline at directrix l_y)
-	# handle infinite edges
+	# handle infinite edges by extending using bisector
 	var curr = root_arc
 	while curr.prev != null: curr = curr.prev
 	
-	while curr.next != null:
-		var bounds = curr.get_bounds(last_ly)
+	while curr != null:
+		#print("Fix node: ", curr._get_info())
+		
 		if curr.left_hedge != null:
-			curr.left_hedge.start = Vertex.create_vertex(bounds[0], curr.vertex.face)
+			#print("Input edge: prev=", curr.left_hedge)
+			var direction = curr.prev.vertex.get_bisector(curr.vertex)[1]
+			curr.left_hedge.start = Vertex.create_vertex(
+				curr.left_hedge.end.point + direction * HALF_EDGE_DIST,
+				curr.vertex.face)
+			
+			#print("	new=", curr.left_hedge)
+			curr.vertex.face.edge_list.append(curr.left_hedge)
+		
 		if curr.right_hedge != null:
-			curr.right_hedge.end = Vertex.create_vertex(bounds[1], curr.vertex.face)
+			#print("Input edge: prev=", curr.right_hedge)
+			var direction = curr.vertex.get_bisector(curr.next.vertex)[1]
+			
+			curr.right_hedge.end = Vertex.create_vertex(
+				curr.right_hedge.start.point + direction * HALF_EDGE_DIST,
+				curr.vertex.face)
+			
+			#print("	new=", curr.right_hedge)
+			curr.vertex.face.edge_list.append(curr.right_hedge)
 		curr = curr.next
 	
+	# get faces
 	draw_faces = []
 	for vtx in vertices:
 		draw_faces.append(vtx.face)
 		pass
+	
+	# get circles
+	draw_circles = []
+	if len(circles) > 0:
+		var max_radius = -1
+		for c in circles:
+			if c.radius > max_radius:
+				max_radius = c.radius
+		for c in circles:
+			if c.radius >= max_radius:
+				draw_circles.append(c)
 	
 	queue_redraw()
 
