@@ -84,27 +84,18 @@ func update_with_points(nodes:Array):
 	while curr.prev != null: curr = curr.prev
 	
 	while curr != null:
-		#print("Fix node: ", curr._get_info())
-		
 		if curr.left_hedge != null:
-			#print("Input ledge: prev=", curr.left_hedge)
 			var direction = curr.prev.vertex.get_bisector(curr.vertex)[1]
 			curr.left_hedge.start = Vertex.create_vertex(
 				curr.left_hedge.end.point + direction * HALF_EDGE_DIST,
 				curr.vertex.face)
-			
-			#print("	new=", curr.left_hedge)
 			curr.vertex.face.edge_list.append(curr.left_hedge)
 		
 		if curr.right_hedge != null:
-			#print("Input redge: prev=", curr.right_hedge)
 			var direction = curr.vertex.get_bisector(curr.next.vertex)[1]
-			
 			curr.right_hedge.end = Vertex.create_vertex(
 				curr.right_hedge.start.point + direction * HALF_EDGE_DIST,
 				curr.vertex.face)
-			
-			#print("	new=", curr.right_hedge)
 			curr.vertex.face.edge_list.append(curr.right_hedge)
 		curr = curr.next
 	

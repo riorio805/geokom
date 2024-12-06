@@ -3,6 +3,7 @@ class_name Vertex
 
 var point:Vector2
 var face:Face = null
+
 var connected_edges:Array[Edge]
 
 static func create_vertex(at_point:Vector2, in_face:Face=null) -> Vertex:

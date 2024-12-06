@@ -5,6 +5,7 @@ extends Resource
 var vertex:Vertex
 
 var edge_list: Array[DCEdge]
+
 var _upel_flag: bool = false
 
 static func create_face(vtx:Vertex) -> Face:

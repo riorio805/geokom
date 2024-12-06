@@ -6,7 +6,7 @@ extends Edge
 var face: Face ## Face connected to edge
 
 var twin: DCEdge ## The other edge that is similar to this edge
-var next: DCEdge ## Next edge i.e. CW to this edge (neg angle)
+var next: DCEdge ## Next edge i.e. is CW to this edge (neg angle)
 var prev: DCEdge ## Prev edge i.e. is CCW to this edge (pos angle)
 
 
