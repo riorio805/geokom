@@ -20,7 +20,8 @@ func _draw() -> void:
 				draw_line(edge.start.point, edge.end.point, color, line_width, true)
 	
 	for circle in draw_circles:
-		draw_circle(circle.center, circle.radius, circle_event_color, false, line_width, true)
+		draw_arc(circle.center, circle.radius, 0, TAU, 2**12, circle_event_color, line_width, true)
+		#draw_circle(circle.center, circle.radius, circle_event_color, false, line_width, true)
 
 func _process(_delta) -> void:
 	if Input.is_action_just_pressed("debug"):
